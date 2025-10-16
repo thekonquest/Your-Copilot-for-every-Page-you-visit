@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "AutoContext Voice AI",
+  "description": "Talk or type to AI that understands your webpage.",
+  "version": "1.0",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "tabs",
+    "identity"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AutoContext Voice AI"
+  },
+  "options_page": "options.html",
+  "oauth2": {
+    "client_id": "701677227593-8sqmu7v9h8t8geepqiklt7d69stdh2jc.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "commands": {
+    "open-popup": {
+      "suggested_key": {
+        "default": "Ctrl+M"
+      },
+      "description": "Open AutoContext Voice AI"
+    }
+  }
+}

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>AutoContext Voice AI - Settings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .section h2 {
+      color: #1e293b;
+      font-size: 20px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      color: #374151;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    textarea {
+      height: 100px;
+      resize: vertical;
+    }
+
+    .help-text {
+      color: #64748b;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+
+    .btn-success {
+      background: #10b981;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .message.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .message.info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status.connected {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status.disconnected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: 20px 0;
+    }
+
+    .feature-list li {
+      padding: 8px 0;
+      color: #374151;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .feature-list li::before {
+      content: "✅";
+      font-size: 16px;
+    }
+
+    .footer {
+      background: #f8fafc;
+      padding: 20px 30px;
+      text-align: center;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .footer a {
+      color: #3b82f6;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎤 AutoContext Voice AI</h1>
+      <p>Configure your AI assistant settings</p>
+    </div>
+
+    <div class="content">
+      <div id="messageContainer"></div>
+
+      <!-- API Configuration -->
+      <div class="section">
+        <h2>🔑 API Configuration</h2>
+        
+        <div class="form-group">
+          <label for="openaiApiKey">OpenAI API Key</label>
+          <input type="password" id="openaiApiKey" placeholder="sk-...">
+          <div class="help-text">
+            Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="premiumKey">Premium License Key (Optional)</label>
+          <input type="text" id="premiumKey" placeholder="Enter premium key">
+          <div class="help-text">
+            Premium features coming soon! This will unlock unlimited requests.
+          </div>
+        </div>
+
+        <button id="saveBtn" class="btn btn-success">Save Settings</button>
+        <button id="testBtn" class="btn btn-secondary" style="margin-left: 10px;">Test Connection</button>
+      </div>
+
+      <!-- Usage Statistics -->
+      <div class="section">
+        <h2>📊 Usage Statistics</h2>
+        
+        <div class="form-group">
+          <label>Today's Usage</label>
+          <div id="usageStats">
+            <span id="usageCount">0</span> / 15 requests used
+            <span id="usageStatus" class="status disconnected">Not Connected</span>
+          </div>
+        </div>
+
+        <button id="resetUsageBtn" class="btn">Reset Daily Usage</button>
+      </div>
+
+      <!-- Features -->
+      <div class="section">
+        <h2>✨ Features</h2>
+        
+        <ul class="feature-list">
+          <li>Voice-to-text input using browser speech recognition</li>
+          <li>AI-powered text generation and correction</li>
+          <li>Webpage context understanding</li>
+          <li>15 free requests per day</li>
+          <li>Premium features coming soon</li>
+        </ul>
+      </div>
+
+      <!-- Account Management -->
+      <div class="section">
+        <h2>👤 Account</h2>
+        
+        <div class="form-group">
+          <label>Google Account</label>
+          <div id="accountInfo">
+            <span id="userEmail">Not signed in</span>
+            <span id="accountStatus" class="status disconnected">Disconnected</span>
+          </div>
+        </div>
+
+        <button id="signInBtn" class="btn">Sign in with Google</button>
+        <button id="signOutBtn" class="btn btn-secondary" style="margin-left: 10px; display: none;">Sign Out</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>
+        <a href="https://github.com/thekonquest/AutoContext-Voice-AI" target="_blank">GitHub Repository</a> |
+        <a href="#" id="supportLink">Support</a> |
+        Version 1.0
+      </p>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
