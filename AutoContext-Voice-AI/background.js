@@ -1,16 +1,26 @@
-// Background script for AutoContext Voice AI
+// Background script for AutoContext AI
 
 // Handle keyboard shortcut (Ctrl+M)
-chrome.commands.onCommand.addListener((command) => {
+chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'open-popup') {
-    // Open the extension popup
-    chrome.action.openPopup();
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      await chrome.sidePanel.open({ tabId: tab.id });
+      console.log('Side panel opened via keyboard shortcut');
+    } catch (error) {
+      console.error('Error opening side panel via shortcut:', error);
+    }
   }
 });
 
 // Handle extension icon click
-chrome.action.onClicked.addListener((tab) => {
-  // The popup will open automatically due to manifest configuration
+chrome.action.onClicked.addListener(async (tab) => {
+  try {
+    await chrome.sidePanel.open({ tabId: tab.id });
+    console.log('Side panel opened');
+  } catch (error) {
+    console.error('Error opening side panel:', error);
+  }
 });
 
 // Handle messages from content scripts
@@ -32,7 +42,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 // Handle extension installation
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    console.log('AutoContext Voice AI installed successfully!');
+    console.log('AutoContext AI installed successfully!');
     
     // Set default settings
     chrome.storage.sync.set({

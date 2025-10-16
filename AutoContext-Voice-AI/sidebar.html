@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoContext AI</title>
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen" class="screen">
+    <div class="login-container">
+      <div class="login-header">
+        <h1>🤖 AutoContext AI</h1>
+        <p>Your smart browser assistant</p>
+      </div>
+      
+      <div class="login-content">
+        <div class="login-icon">
+          <div class="ai-icon">🤖</div>
+        </div>
+        
+        <h2>Welcome to AutoContext AI</h2>
+        <p>Sign in with Google to start using AI that understands your webpage context.</p>
+        
+        <button id="googleSignInBtn" class="google-signin-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Sign in with Google
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Screen -->
+  <div id="appScreen" class="screen" style="display: none;">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <h2>🤖 AutoContext AI</h2>
+        <div class="usage-info">
+          <span id="usageCount">0/10</span>
+          <span id="planType">Free</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
+        <button id="signOutBtn" class="sign-out-btn" title="Sign Out">🚪</button>
+      </div>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-container">
+      <div id="messagesContainer" class="messages-container">
+        <div class="welcome-message">
+          <div class="message ai-message">
+            <div class="message-content">
+              <p>👋 Hi! I'm your AI assistant. I can help you understand and work with any webpage you're viewing. What would you like to know?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Loading indicator -->
+      <div id="loading" class="loading" style="display: none;">
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <span class="loading-text">AI is thinking...</span>
+      </div>
+    </div>
+
+    <!-- Input Section -->
+    <div class="input-section">
+      <div class="input-container">
+        <textarea 
+          id="promptInput" 
+          placeholder="Type your question or request here..."
+          rows="3"
+          maxlength="1000"
+        ></textarea>
+        <button id="submitBtn" class="submit-btn" title="Send message">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-footer">
+        <span class="char-count" id="charCount">0/1000</span>
+        <span class="daily-usage">Daily usage: <span id="dailyUsage">0</span>/<span id="dailyLimit">10</span></span>
+      </div>
+    </div>
+
+    <!-- Premium Upgrade Section -->
+    <div id="premiumSection" class="premium-section" style="display: none;">
+      <div class="premium-content">
+        <h3>🚫 Daily Limit Reached</h3>
+        <p>You've used all your free requests for today.</p>
+        <div class="upgrade-buttons">
+          <button class="upgrade-btn basic" onclick="upgradeToPlan('basic')">
+            Basic - $4.99/month
+          </button>
+          <button class="upgrade-btn pro" onclick="upgradeToPlan('pro')">
+            Pro - $9.99/month
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="sidebar.js"></script>
+</body>
+</html>
