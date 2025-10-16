@@ -217,6 +217,53 @@
     .footer a:hover {
       text-decoration: underline;
     }
+
+    .plan-display {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 8px;
+    }
+
+    .plan-name {
+      font-weight: 600;
+      color: #3b82f6;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .plan-features {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .plans-overview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 8px;
+    }
+
+    .plan-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .plan-card h4 {
+      color: #1e293b;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .plan-card p {
+      color: #64748b;
+      font-size: 14px;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -229,28 +276,33 @@
     <div class="content">
       <div id="messageContainer"></div>
 
-      <!-- API Configuration -->
+      <!-- Plan Information -->
       <div class="section">
-        <h2>🔑 API Configuration</h2>
+        <h2>📋 Current Plan</h2>
         
         <div class="form-group">
-          <label for="openaiApiKey">OpenAI API Key</label>
-          <input type="password" id="openaiApiKey" placeholder="sk-...">
-          <div class="help-text">
-            Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>
+          <label>Your Plan</label>
+          <div id="currentPlan" class="plan-display">
+            <span class="plan-name">Free Plan</span>
+            <span class="plan-features">10 requests/day with GPT-3.5</span>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="premiumKey">Premium License Key (Optional)</label>
-          <input type="text" id="premiumKey" placeholder="Enter premium key">
-          <div class="help-text">
-            Premium features coming soon! This will unlock unlimited requests.
+          <label>Available Plans</label>
+          <div class="plans-overview">
+            <div class="plan-card">
+              <h4>Basic - $4.99/month</h4>
+              <p>100 requests/day with GPT-3.5</p>
+            </div>
+            <div class="plan-card">
+              <h4>Pro - $9.99/month</h4>
+              <p>Unlimited requests with choice of AI model</p>
+            </div>
           </div>
         </div>
 
-        <button id="saveBtn" class="btn btn-success">Save Settings</button>
-        <button id="testBtn" class="btn btn-secondary" style="margin-left: 10px;">Test Connection</button>
+        <button id="upgradeBtn" class="btn btn-primary">Upgrade Plan</button>
       </div>
 
       <!-- Usage Statistics -->

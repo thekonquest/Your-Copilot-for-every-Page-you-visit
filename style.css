@@ -396,9 +396,9 @@ body {
 
 .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 30px;
-    max-width: 800px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
@@ -417,9 +417,14 @@ body {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
-.pricing-card.premium {
+.pricing-card.basic {
     border-color: #3b82f6;
     transform: scale(1.05);
+}
+
+.pricing-card.pro {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
 }
 
 .popular-badge {
@@ -428,6 +433,19 @@ body {
     left: 50%;
     transform: translateX(-50%);
     background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.pro-badge {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #10b981, #059669);
     color: white;
     padding: 8px 20px;
     border-radius: 20px;

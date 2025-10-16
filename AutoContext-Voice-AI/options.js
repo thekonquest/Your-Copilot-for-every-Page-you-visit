@@ -1,10 +1,8 @@
 // Options page script for AutoContext Voice AI
 
 document.addEventListener('DOMContentLoaded', function() {
-  const openaiApiKeyInput = document.getElementById('openaiApiKey');
-  const premiumKeyInput = document.getElementById('premiumKey');
-  const saveBtn = document.getElementById('saveBtn');
-  const testBtn = document.getElementById('testBtn');
+  const currentPlan = document.getElementById('currentPlan');
+  const upgradeBtn = document.getElementById('upgradeBtn');
   const usageCount = document.getElementById('usageCount');
   const usageStatus = document.getElementById('usageStatus');
   const resetUsageBtn = document.getElementById('resetUsageBtn');
@@ -15,111 +13,59 @@ document.addEventListener('DOMContentLoaded', function() {
   const messageContainer = document.getElementById('messageContainer');
 
   // Load saved settings
-  loadSettings();
+  loadPlanInfo();
   loadUsageStats();
   loadAccountInfo();
 
   // Event listeners
-  saveBtn.addEventListener('click', saveSettings);
-  testBtn.addEventListener('click', testConnection);
+  upgradeBtn.addEventListener('click', upgradePlan);
   resetUsageBtn.addEventListener('click', resetUsage);
   signInBtn.addEventListener('click', signInWithGoogle);
   signOutBtn.addEventListener('click', signOut);
 
-  async function loadSettings() {
+  async function loadPlanInfo() {
     try {
-      const result = await chrome.storage.sync.get(['openaiApiKey', 'premiumKey']);
+      const result = await chrome.storage.sync.get(['userPlan']);
+      const plan = result.userPlan || 'free';
       
-      if (result.openaiApiKey) {
-        openaiApiKeyInput.value = result.openaiApiKey;
-      }
+      const planNames = {
+        free: 'Free Plan',
+        basic: 'Basic Plan',
+        pro: 'Pro Plan'
+      };
       
-      if (result.premiumKey) {
-        premiumKeyInput.value = result.premiumKey;
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-      showMessage('Error loading settings', 'error');
-    }
-  }
-
-  async function saveSettings() {
-    try {
-      const openaiApiKey = openaiApiKeyInput.value.trim();
-      const premiumKey = premiumKeyInput.value.trim();
-
-      if (!openaiApiKey) {
-        showMessage('Please enter your OpenAI API key', 'error');
-        return;
-      }
-
-      // Validate API key format
-      if (!openaiApiKey.startsWith('sk-')) {
-        showMessage('Invalid API key format. OpenAI keys start with "sk-"', 'error');
-        return;
-      }
-
-      // Save to storage
-      await chrome.storage.sync.set({
-        openaiApiKey,
-        premiumKey
-      });
-
-      showMessage('Settings saved successfully!', 'success');
+      const planFeatures = {
+        free: '10 requests/day with GPT-3.5',
+        basic: '100 requests/day with GPT-3.5',
+        pro: 'Unlimited requests with choice of AI model'
+      };
       
-      // Update status
-      usageStatus.textContent = 'Connected';
-      usageStatus.className = 'status connected';
+      currentPlan.innerHTML = `
+        <span class="plan-name">${planNames[plan]}</span>
+        <span class="plan-features">${planFeatures[plan]}</span>
+      `;
       
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      showMessage('Error saving settings', 'error');
-    }
-  }
-
-  async function testConnection() {
-    try {
-      const result = await chrome.storage.sync.get(['openaiApiKey']);
-      
-      if (!result.openaiApiKey) {
-        showMessage('Please save your API key first', 'error');
-        return;
-      }
-
-      showMessage('Testing connection...', 'info');
-
-      // Test API call
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${result.openaiApiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            { role: 'user', content: 'Hello, this is a test message.' }
-          ],
-          max_tokens: 10
-        })
-      });
-
-      if (response.ok) {
-        showMessage('✅ Connection successful! API key is working.', 'success');
-        usageStatus.textContent = 'Connected';
-        usageStatus.className = 'status connected';
+      if (plan === 'free') {
+        upgradeBtn.style.display = 'inline-block';
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Connection failed');
+        upgradeBtn.style.display = 'none';
       }
-
+      
     } catch (error) {
-      console.error('Connection test failed:', error);
-      showMessage(`❌ Connection failed: ${error.message}`, 'error');
-      usageStatus.textContent = 'Connection Failed';
-      usageStatus.className = 'status disconnected';
+      console.error('Error loading plan info:', error);
+      showMessage('Error loading plan info', 'error');
     }
   }
+
+  async function upgradePlan() {
+    try {
+      showMessage('Upgrade functionality coming soon! Contact support@youraiasistant.com for early access.', 'info');
+    } catch (error) {
+      console.error('Error upgrading plan:', error);
+      showMessage('Error upgrading plan', 'error');
+    }
+  }
+
 
   async function loadUsageStats() {
     try {
@@ -133,15 +79,9 @@ document.addEventListener('DOMContentLoaded', function() {
       
       usageCount.textContent = currentUsage;
       
-      // Check if API key is configured
-      const settings = await chrome.storage.sync.get(['openaiApiKey']);
-      if (settings.openaiApiKey) {
-        usageStatus.textContent = 'Connected';
-        usageStatus.className = 'status connected';
-      } else {
-        usageStatus.textContent = 'Not Connected';
-        usageStatus.className = 'status disconnected';
-      }
+      // Always show connected since we handle API keys on our end
+      usageStatus.textContent = 'Connected';
+      usageStatus.className = 'status connected';
       
     } catch (error) {
       console.error('Error loading usage stats:', error);

@@ -2,7 +2,12 @@ let isListening = false;
 let recognition = null;
 let user = null;
 let currentUsage = 0;
-const DAILY_LIMIT = 15;
+let userPlan = 'free'; // 'free', 'basic', 'pro'
+const DAILY_LIMITS = {
+  free: 10,
+  basic: 100,
+  pro: -1 // unlimited
+};
 
 document.addEventListener('DOMContentLoaded', function() {
   const loginScreen = document.getElementById('loginScreen');
@@ -129,9 +134,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function updateUsageDisplay() {
-    usageCount.textContent = `${currentUsage}/${DAILY_LIMIT}`;
+    const limit = DAILY_LIMITS[userPlan];
+    if (limit === -1) {
+      usageCount.textContent = `${currentUsage}/∞ (Pro)`;
+    } else {
+      usageCount.textContent = `${currentUsage}/${limit}`;
+    }
     
-    if (currentUsage >= DAILY_LIMIT) {
+    if (limit !== -1 && currentUsage >= limit) {
       premiumSection.style.display = 'block';
       submitBtn.disabled = true;
       submitBtn.textContent = 'Daily limit reached';
@@ -197,7 +207,8 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    if (currentUsage >= DAILY_LIMIT) {
+    const limit = DAILY_LIMITS[userPlan];
+    if (limit !== -1 && currentUsage >= limit) {
       showLimitReachedMessage();
       return;
     }
@@ -212,11 +223,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       const webpageData = await chrome.tabs.sendMessage(tab.id, { action: 'getPageData' });
 
-      // Get OpenAI API key from storage
-      const result = await chrome.storage.sync.get(['openaiApiKey']);
-      if (!result.openaiApiKey) {
-        throw new Error('Please set your OpenAI API key in the options page.');
-      }
+      // Get user plan for API selection
+      const planResult = await chrome.storage.sync.get(['userPlan']);
+      const userPlan = planResult.userPlan || 'free';
 
       // Prepare the context for AI
       const context = {
@@ -225,8 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
         content: webpageData.content
       };
 
-      // Call OpenAI API
-      const aiResponse = await callOpenAI(prompt, context, result.openaiApiKey);
+      // Call our AI backend
+      const aiResponse = await callAI(prompt, context, userPlan);
       
       // Display response
       response.innerHTML = formatResponse(aiResponse);
@@ -245,7 +254,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  async function callOpenAI(prompt, context, apiKey) {
+  async function callAI(prompt, context, userPlan) {
+    // For now, this will be a placeholder until you set up your backend
+    // In the future, this will call your server with the user's plan info
+    
     const systemPrompt = `You are AutoContext Voice AI, a helpful assistant that understands webpage context. 
     
     Current webpage context:
@@ -255,14 +267,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     Help the user with their request while considering the webpage context when relevant.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // TODO: Replace with your actual backend endpoint
+    const response = await fetch('https://your-backend.com/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${userPlan}` // User's plan info
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: userPlan === 'pro' ? 'gpt-4' : 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
@@ -273,12 +286,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to get AI response');
+      throw new Error('AI service temporarily unavailable. Please try again later.');
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    return data.response || 'AI response received successfully!';
   }
 
   function formatResponse(text) {
@@ -293,15 +305,28 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showLimitReachedMessage() {
+    const limit = DAILY_LIMITS[userPlan];
+    const limitText = limit === 10 ? '10 free requests' : `${limit} requests`;
+    
     response.innerHTML = `
       <div class="limit-reached">
         <h3>🚫 Daily Limit Reached</h3>
-        <p>You've used all 15 free requests for today. Premium features coming soon!</p>
-        <button class="premium-btn" onclick="document.getElementById('goPremiumBtn').click()">
-          Go Premium
-        </button>
+        <p>You've used all ${limitText} for today. Upgrade for more requests!</p>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button class="premium-btn" onclick="upgradeToPlan('basic')">
+            Basic - $4.99/month
+          </button>
+          <button class="premium-btn" onclick="upgradeToPlan('pro')">
+            Pro - $9.99/month
+          </button>
+        </div>
       </div>
     `;
+  }
+
+  function upgradeToPlan(plan) {
+    // This will be implemented with your payment system
+    alert(`Upgrade to ${plan} plan coming soon! Contact support@youraiasistant.com`);
   }
 
   // Initialize display
