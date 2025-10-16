@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "AutoContext Voice AI",
-  "description": "Talk or type to AI that understands your webpage.",
+  "name": "AutoContext AI",
+  "description": "Type to AI that understands your webpage.",
   "version": "1.0",
   "permissions": [
     "activeTab",
@@ -21,7 +21,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "AutoContext Voice AI"
+        "default_title": "AutoContext AI"
   },
   "options_page": "options.html",
   "oauth2": {
@@ -33,7 +33,7 @@
       "suggested_key": {
         "default": "Ctrl+M"
       },
-      "description": "Open AutoContext Voice AI"
+        "description": "Open AutoContext AI"
     }
   }
 }

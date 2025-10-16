@@ -1,5 +1,3 @@
-let isListening = false;
-let recognition = null;
 let user = null;
 let currentUsage = 0;
 let userPlan = 'free'; // 'free', 'basic', 'pro'
@@ -17,8 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const settingsBtn = document.getElementById('settingsBtn');
   const promptInput = document.getElementById('promptInput');
   const submitBtn = document.getElementById('submitBtn');
-  const voiceBtn = document.getElementById('voiceBtn');
-  const voiceStatus = document.getElementById('voiceStatus');
   const response = document.getElementById('response');
   const loading = document.getElementById('loading');
   const usageCount = document.getElementById('usageCount');
@@ -27,8 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const userAvatar = document.getElementById('userAvatar');
   const userName = document.getElementById('userName');
 
-  // Initialize voice recognition
-  initVoiceRecognition();
 
   // Check if user is signed in
   checkAuthStatus();
@@ -38,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
   signOutBtn.addEventListener('click', signOut);
   settingsBtn.addEventListener('click', openSettings);
   submitBtn.addEventListener('click', handleSubmit);
-  voiceBtn.addEventListener('click', toggleVoiceRecognition);
 
   // Keyboard shortcut
   document.addEventListener('keydown', function(e) {
@@ -152,58 +145,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  async function initVoiceRecognition() {
-    if ('webkitSpeechRecognition' in window) {
-      recognition = new webkitSpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-
-      recognition.onstart = function() {
-        isListening = true;
-        voiceBtn.classList.add('listening');
-        voiceStatus.textContent = 'Listening...';
-      };
-
-      recognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript;
-        promptInput.value = transcript;
-        voiceStatus.textContent = 'Got it!';
-        setTimeout(() => {
-          voiceStatus.textContent = '';
-        }, 2000);
-      };
-
-      recognition.onerror = function(event) {
-        voiceStatus.textContent = 'Error: ' + event.error;
-        isListening = false;
-        voiceBtn.classList.remove('listening');
-      };
-
-      recognition.onend = function() {
-        isListening = false;
-        voiceBtn.classList.remove('listening');
-      };
-    } else {
-      voiceBtn.style.display = 'none';
-      voiceStatus.textContent = 'Voice not supported';
-    }
-  }
-
-  function toggleVoiceRecognition() {
-    if (!recognition) return;
-    
-    if (isListening) {
-      recognition.stop();
-    } else {
-      recognition.start();
-    }
-  }
 
   async function handleSubmit() {
     const prompt = promptInput.value.trim();
     if (!prompt) {
-      alert('Please enter a prompt or use voice input.');
+      alert('Please enter a prompt.');
       return;
     }
 
