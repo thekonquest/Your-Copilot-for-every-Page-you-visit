@@ -451,7 +451,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Click-to-fill system
-  let selectedFieldInfo = null;
   let currentFillContent = '';
 
   // Auto-fill functions
@@ -482,22 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       
       if (response && response.success) {
-        addMessageToChat('🎯 Click on ANY field you want to fill with AI content!', 'ai');
-        
-        // Add a "Fill Selected Field" button
-        const fillButton = document.createElement('button');
-        fillButton.className = 'auto-fill-btn';
-        fillButton.textContent = '✅ Fill Selected Field';
-        fillButton.onclick = () => fillSelectedField();
-        
-        // Add to the last AI message
-        const lastMessage = document.querySelector('.ai-message:last-child');
-        if (lastMessage) {
-          const buttonContainer = lastMessage.querySelector('.auto-fill-buttons') || 
-                                lastMessage.appendChild(document.createElement('div'));
-          buttonContainer.className = 'auto-fill-buttons';
-          buttonContainer.appendChild(fillButton);
-        }
+        addMessageToChat('🎯 Click on ANY field to fill it instantly!', 'ai');
       } else {
         addMessageToChat('❌ Error starting click-to-fill mode. Make sure you\'re on a webpage.', 'ai');
       }
@@ -507,50 +491,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Fill the selected field
-  async function fillSelectedField() {
-    if (!selectedFieldInfo) {
-      addMessageToChat('❌ No field selected. Please click on a field first!', 'ai');
-      return;
-    }
-
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      
-      // Extract title and content from AI response
-      const titleMatch = currentFillContent.match(/\*\*Title:\*\*\s*(.+?)(?:\n|$)/i);
-      const title = titleMatch ? titleMatch[1].trim() : currentFillContent.split('\n')[0].trim();
-      const cleanContent = currentFillContent.replace(/\*\*Title:\*\*\s*.+?(?:\n|$)/i, '').trim();
-      
-      // Determine what to fill based on field type
-      let contentToFill = cleanContent;
-      if (selectedFieldInfo.fieldType === 'INPUT' && selectedFieldInfo.fieldTypeAttr === 'text') {
-        // Likely a title field
-        contentToFill = title;
-      }
-      
-      const response = await chrome.tabs.sendMessage(tab.id, {
-        action: 'fillSelectedField',
-        content: contentToFill
-      });
-      
-      if (response && response.success) {
-        addMessageToChat('✅ Field filled successfully!', 'ai');
-        
-        // Exit click-to-fill mode
-        await chrome.tabs.sendMessage(tab.id, {
-          action: 'exitClickToFillMode'
-        });
-        
-        selectedFieldInfo = null;
-      } else {
-        addMessageToChat('❌ Error filling field. Please try again.', 'ai');
-      }
-    } catch (error) {
-      console.error('Error filling selected field:', error);
-      addMessageToChat('❌ Error filling field. Please try again.', 'ai');
-    }
-  }
 
   async function fillTitleField(content) {
     // Use the same click-to-fill system for title fields
@@ -558,13 +498,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
 
-  // Listen for field selection messages
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'fieldSelected') {
-      selectedFieldInfo = request;
-      addMessageToChat(`✅ Field selected: ${request.fieldType} (${request.fieldTypeAttr || 'contenteditable'})`, 'ai');
-    }
-  });
 
   // Global functions for inline event handlers
   window.upgradeToPlan = upgradeToPlan;

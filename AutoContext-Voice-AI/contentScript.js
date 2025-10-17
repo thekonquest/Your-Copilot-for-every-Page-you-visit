@@ -222,7 +222,7 @@ function removeClickListeners() {
   });
 }
 
-// Handle field click
+// Handle field click - INSTANT FILL
 function handleFieldClick(event) {
   if (!clickToFillMode) return;
   
@@ -231,30 +231,31 @@ function handleFieldClick(event) {
   
   selectedField = event.target;
   
-  // Remove previous selection
-  document.querySelectorAll('.copilot-selected').forEach(el => {
-    el.classList.remove('copilot-selected');
-    el.style.backgroundColor = '';
-  });
+  console.log('Click-to-fill: Selected field, filling instantly:', selectedField);
   
-  // Highlight selected field
-  selectedField.classList.add('copilot-selected');
-  selectedField.style.backgroundColor = '#dbeafe';
+  // INSTANT FILL - no confirmation needed
+  const success = fillSelectedField(fillContent);
   
-  console.log('Click-to-fill: Selected field:', selectedField);
-  
-  // Send message to sidebar
-  chrome.runtime.sendMessage({
-    action: 'fieldSelected',
-    fieldType: selectedField.tagName,
-    fieldTypeAttr: selectedField.type,
-    fieldId: selectedField.id,
-    fieldClass: selectedField.className,
-    fieldPlaceholder: selectedField.placeholder
-  });
+  if (success) {
+    // Exit click-to-fill mode immediately
+    clickToFillMode = false;
+    removeClickListeners();
+    
+    // Remove instruction banner
+    const instruction = document.getElementById('copilot-instruction');
+    if (instruction) {
+      instruction.remove();
+    }
+    
+    // Remove field highlights
+    document.querySelectorAll('.copilot-selected').forEach(el => {
+      el.classList.remove('copilot-selected');
+      el.style.backgroundColor = '';
+    });
+  }
 }
 
-// Fill the selected field
+// Fill the selected field - SMART CONTENT SELECTION
 function fillSelectedField(content) {
   if (!selectedField) {
     console.log('Click-to-fill: No field selected');
@@ -262,17 +263,35 @@ function fillSelectedField(content) {
   }
   
   try {
+    // Extract title and content from AI response
+    const titleMatch = content.match(/\*\*Title:\*\*\s*(.+?)(?:\n|$)/i);
+    const title = titleMatch ? titleMatch[1].trim() : content.split('\n')[0].trim();
+    const cleanContent = content.replace(/\*\*Title:\*\*\s*.+?(?:\n|$)/i, '').trim();
+    
+    // Smart content selection based on field type
+    let contentToFill = cleanContent;
+    
+    // If it's a text input (likely title field), use title
+    if (selectedField.tagName === 'INPUT' && selectedField.type === 'text') {
+      contentToFill = title;
+    }
+    // If it's a textarea or contenteditable, use full content
+    else if (selectedField.tagName === 'TEXTAREA' || selectedField.contentEditable === 'true') {
+      contentToFill = cleanContent;
+    }
+    
+    // Fill the field
     if (selectedField.tagName === 'INPUT' || selectedField.tagName === 'TEXTAREA') {
-      selectedField.value = content;
+      selectedField.value = contentToFill;
       selectedField.dispatchEvent(new Event('input', { bubbles: true }));
       selectedField.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (selectedField.contentEditable === 'true' || selectedField.getAttribute('role') === 'textbox') {
-      selectedField.textContent = content;
+      selectedField.textContent = contentToFill;
       selectedField.dispatchEvent(new Event('input', { bubbles: true }));
       selectedField.dispatchEvent(new Event('change', { bubbles: true }));
     }
     
-    console.log('Click-to-fill: Field filled successfully');
+    console.log('Click-to-fill: Field filled instantly with:', contentToFill.substring(0, 50) + '...');
     return true;
   } catch (error) {
     console.error('Click-to-fill: Error filling field:', error);
