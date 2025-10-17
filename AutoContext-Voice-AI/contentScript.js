@@ -172,9 +172,38 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       console.log('Page loaded, Your Copilot ready');
+      setupTextSelectionDetection();
     });
   } else {
     console.log('Page already loaded, Your Copilot ready');
+    setupTextSelectionDetection();
+  }
+
+  // Setup text selection detection
+  function setupTextSelectionDetection() {
+    // Listen for text selection events
+    document.addEventListener('mouseup', handleTextSelection);
+    document.addEventListener('keyup', handleTextSelection);
+    document.addEventListener('selectionchange', handleTextSelection);
+  }
+
+  // Handle text selection
+  function handleTextSelection() {
+    const selection = window.getSelection();
+    const text = selection.toString().trim();
+    
+    if (text.length > 0) {
+      // Send text selection to sidebar
+      chrome.runtime.sendMessage({
+        action: 'textSelected',
+        text: text
+      });
+    } else {
+      // Send text deselection to sidebar
+      chrome.runtime.sendMessage({
+        action: 'textDeselected'
+      });
+    }
   }
 
   // Utility function to get page summary (for future use)

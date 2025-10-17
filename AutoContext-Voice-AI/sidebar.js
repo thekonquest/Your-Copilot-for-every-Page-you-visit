@@ -500,31 +500,35 @@ let selectedText = '';
 let correctTextBtn = null;
 
 // Initialize text correction on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   correctTextBtn = document.getElementById('correctTextBtn');
   setupTextSelectionListener();
+  
+  // Inject content script to enable text selection detection
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['contentScript.js']
+    });
+  } catch (error) {
+    console.error('Error injecting content script:', error);
+  }
 });
 
 // Listen for text selection on the current page
 function setupTextSelectionListener() {
-  // Listen for text selection events
-  document.addEventListener('mouseup', handleTextSelection);
-  document.addEventListener('keyup', handleTextSelection);
-}
-
-// Handle text selection
-function handleTextSelection() {
-  const selection = window.getSelection();
-  const text = selection.toString().trim();
-  
-  if (text.length > 0) {
-    selectedText = text;
-    enableCorrectButton();
-    addMessageToChat(`📝 Selected: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`, 'user');
-  } else {
-    selectedText = '';
-    disableCorrectButton();
-  }
+  // Listen for text selection events from content script
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'textSelected') {
+      selectedText = request.text;
+      enableCorrectButton();
+      addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
+    } else if (request.action === 'textDeselected') {
+      selectedText = '';
+      disableCorrectButton();
+    }
+  });
 }
 
 // Enable the correct button
