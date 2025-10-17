@@ -456,7 +456,7 @@ function showCorrectionInstruction() {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     text-align: center;
   `;
-  instruction.textContent = '✏️ Highlight any text you want to correct!';
+  instruction.textContent = '✏️ Highlight any text you want to correct, then click "Confirm & Correct"!';
   document.body.appendChild(instruction);
   
   // Auto-remove after 10 seconds
@@ -472,50 +472,88 @@ function showCorrectionButton(selection) {
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
   
+  // Remove existing button
+  if (correctionButton) {
+    correctionButton.remove();
+  }
+  
   correctionButton = document.createElement('button');
   correctionButton.id = 'text-correction-btn';
-  correctionButton.textContent = '✨ Correct';
+  correctionButton.textContent = '✅ Confirm & Correct';
   correctionButton.style.cssText = `
     position: fixed;
-    top: ${rect.top - 40}px;
-    left: ${rect.left + (rect.width / 2) - 40}px;
+    top: ${rect.top - 50}px;
+    left: ${rect.left + (rect.width / 2) - 60}px;
     background: #10b981;
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 12px;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     z-index: 10001;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     transition: all 0.2s;
+    animation: pulse 2s infinite;
   `;
+  
+  // Add pulse animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  `;
+  document.head.appendChild(style);
   
   correctionButton.addEventListener('click', handleCorrectionClick);
   correctionButton.addEventListener('mouseenter', () => {
     correctionButton.style.background = '#059669';
-    correctionButton.style.transform = 'translateY(-1px)';
+    correctionButton.style.transform = 'translateY(-2px) scale(1.05)';
+    correctionButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
   });
   correctionButton.addEventListener('mouseleave', () => {
     correctionButton.style.background = '#10b981';
-    correctionButton.style.transform = 'translateY(0)';
+    correctionButton.style.transform = 'translateY(0) scale(1)';
+    correctionButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
   });
   
   document.body.appendChild(correctionButton);
+  
+  // Auto-remove button after 30 seconds
+  setTimeout(() => {
+    if (correctionButton && correctionButton.parentNode) {
+      correctionButton.remove();
+    }
+  }, 30000);
 }
 
 // Handle correction button click
 async function handleCorrectionClick() {
-  if (!selectedText || !selectedRange) return;
+  if (!selectedText || !selectedRange) {
+    console.log('Text Correction: No text or range selected');
+    return;
+  }
   
   console.log('Text Correction: Correcting text:', selectedText);
+  
+  // Show loading state
+  if (correctionButton) {
+    correctionButton.textContent = '⏳ Correcting...';
+    correctionButton.disabled = true;
+    correctionButton.style.background = '#6b7280';
+  }
   
   try {
     // Get corrected text from AI
     const correctedText = await getCorrectedText(selectedText);
     
-    if (correctedText) {
+    if (correctedText && correctedText.trim() !== '') {
+      console.log('Text Correction: Got corrected text:', correctedText);
+      
       // Replace text live on the page
       replaceTextLive(selectedText, correctedText);
       
@@ -525,13 +563,47 @@ async function handleCorrectionClick() {
         text: selectedText,
         correctedText: correctedText
       });
+      
+      // Show success state briefly
+      if (correctionButton) {
+        correctionButton.textContent = '✅ Corrected!';
+        correctionButton.style.background = '#10b981';
+        setTimeout(() => {
+          if (correctionButton) {
+            correctionButton.remove();
+          }
+        }, 2000);
+      }
+      
+    } else {
+      console.log('Text Correction: No corrected text received');
+      if (correctionButton) {
+        correctionButton.textContent = '❌ Failed';
+        correctionButton.style.background = '#ef4444';
+        setTimeout(() => {
+          if (correctionButton) {
+            correctionButton.remove();
+          }
+        }, 2000);
+      }
     }
     
   } catch (error) {
     console.error('Text Correction: Error:', error);
+    if (correctionButton) {
+      correctionButton.textContent = '❌ Error';
+      correctionButton.style.background = '#ef4444';
+      setTimeout(() => {
+        if (correctionButton) {
+          correctionButton.remove();
+        }
+      }, 2000);
+    }
   } finally {
-    // Clean up
-    exitTextCorrectionMode();
+    // Clean up after a delay
+    setTimeout(() => {
+      exitTextCorrectionMode();
+    }, 3000);
   }
 }
 
@@ -569,12 +641,32 @@ async function getCorrectedText(text) {
 // Replace text live on the page with typewriter effect
 function replaceTextLive(originalText, correctedText) {
   try {
-    // Delete the original text
-    selectedRange.deleteContents();
+    console.log('Text Correction: Starting live replacement');
+    console.log('Original text:', originalText);
+    console.log('Corrected text:', correctedText);
     
-    // Create a text node for the corrected text
+    // Store the original range
+    const range = selectedRange.cloneRange();
+    
+    // Delete the original text
+    range.deleteContents();
+    
+    // Create a container for the typewriter effect
+    const container = document.createElement('span');
+    container.style.cssText = `
+      background: linear-gradient(120deg, #fef3c7 0%, #fde68a 100%);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 2px solid #f59e0b;
+      transition: all 0.3s ease;
+    `;
+    
+    // Insert the container
+    range.insertNode(container);
+    
+    // Create a text node inside the container
     const textNode = document.createTextNode('');
-    selectedRange.insertNode(textNode);
+    container.appendChild(textNode);
     
     // Type the corrected text character by character
     let index = 0;
@@ -585,29 +677,55 @@ function replaceTextLive(originalText, correctedText) {
       } else {
         clearInterval(typeInterval);
         
-        // Add a subtle highlight effect
-        const span = document.createElement('span');
-        span.style.cssText = `
+        // Add success highlight effect
+        container.style.cssText = `
           background: linear-gradient(120deg, #a7f3d0 0%, #d1fae5 100%);
-          padding: 2px 4px;
-          border-radius: 3px;
-          transition: all 0.3s ease;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 2px solid #10b981;
+          transition: all 0.5s ease;
+          animation: successPulse 0.6s ease-out;
         `;
-        span.textContent = correctedText;
         
-        // Replace the text node with the highlighted span
-        textNode.parentNode.replaceChild(span, textNode);
+        // Add success animation
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+          }
+        `;
+        document.head.appendChild(style);
         
-        // Remove highlight after 2 seconds
+        // Remove highlight after 3 seconds
         setTimeout(() => {
-          span.style.background = 'transparent';
-          span.style.padding = '0';
-        }, 2000);
+          container.style.background = 'transparent';
+          container.style.border = 'none';
+          container.style.padding = '0';
+          
+          // Convert back to normal text
+          const parent = container.parentNode;
+          if (parent) {
+            parent.replaceChild(textNode, container);
+          }
+        }, 3000);
+        
+        console.log('Text Correction: Live replacement completed');
       }
-    }, 30); // 30ms delay between characters
+    }, 25); // 25ms delay between characters for smoother effect
     
   } catch (error) {
     console.error('Text Correction: Error replacing text:', error);
+    
+    // Fallback: simple text replacement
+    try {
+      selectedRange.deleteContents();
+      selectedRange.insertNode(document.createTextNode(correctedText));
+      console.log('Text Correction: Fallback replacement successful');
+    } catch (fallbackError) {
+      console.error('Text Correction: Fallback also failed:', fallbackError);
+    }
   }
 }
 

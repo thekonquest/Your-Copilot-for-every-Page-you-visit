@@ -515,7 +515,7 @@ async function startTextCorrection() {
     });
 
     if (response && response.success) {
-      addMessageToChat('🎯 Highlight any text you want to correct, then click "Correct" when ready!', 'ai');
+      addMessageToChat('🎯 Highlight any text you want to correct, then click "Confirm & Correct" when ready!', 'ai');
     } else {
       addMessageToChat('❌ Could not start text correction mode. Make sure you\'re on a webpage.', 'ai');
     }
