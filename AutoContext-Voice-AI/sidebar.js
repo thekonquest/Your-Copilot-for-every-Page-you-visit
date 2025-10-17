@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const charCount = document.getElementById('charCount');
   const premiumSection = document.getElementById('premiumSection');
   const messagesContainer = document.getElementById('messagesContainer');
-  const quickActionBtns = document.querySelectorAll('.quick-action-btn');
 
   // Initialize
   checkAuthStatus();
@@ -40,13 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
   settingsBtn.addEventListener('click', openSettings);
   submitBtn.addEventListener('click', handleSubmit);
   
-  // Quick action buttons
-  quickActionBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const action = this.getAttribute('data-action');
-      handleQuickAction(action);
-    });
-  });
   
   // Character counter
   promptInput.addEventListener('input', updateCharCount);
@@ -150,71 +142,6 @@ document.addEventListener('DOMContentLoaded', function() {
     chrome.runtime.openOptionsPage();
   }
 
-  async function handleQuickAction(action) {
-    const limit = DAILY_LIMITS[userPlan];
-    if (limit !== -1 && currentUsage >= limit) {
-      return;
-    }
-
-    // Define prompts for each action
-    const actionPrompts = {
-      summarize: "Please provide a concise summary of this webpage content.",
-      keyPoints: "What are the main key points from this webpage?",
-      explain: "Explain this webpage content in simple terms.",
-      translate: "Translate this webpage content to English if it's in another language, or provide a brief overview if it's already in English."
-    };
-
-    const prompt = actionPrompts[action];
-    if (!prompt) return;
-
-    // Add user message to chat
-    addMessageToChat(`Quick action: ${action}`, 'user');
-    
-    // Show loading
-    loading.style.display = 'flex';
-    submitBtn.disabled = true;
-
-    // Disable quick action buttons
-    quickActionBtns.forEach(btn => btn.disabled = true);
-
-    try {
-      // Get webpage context
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      const webpageData = await chrome.tabs.sendMessage(tab.id, { action: 'getPageData' });
-
-      // Get user plan for API selection
-      const planResult = await chrome.storage.sync.get(['userPlan']);
-      const userPlan = planResult.userPlan || 'free';
-
-      // Prepare the context for AI
-      const context = {
-        url: webpageData.url,
-        title: webpageData.title,
-        content: webpageData.content
-      };
-
-      // Call our AI backend
-      const aiResponse = await callAI(prompt, context, userPlan);
-      
-      // Add AI response to chat
-      addMessageToChat(aiResponse, 'ai');
-      
-      // Update usage count
-      currentUsage++;
-      await chrome.storage.local.set({ usageCount: currentUsage });
-      updateUsageDisplay();
-      
-    } catch (error) {
-      console.error('Error with quick action:', error);
-      addMessageToChat(`Sorry, I encountered an error: ${error.message}`, 'ai');
-    } finally {
-      loading.style.display = 'none';
-      submitBtn.disabled = false;
-      
-      // Re-enable quick action buttons
-      quickActionBtns.forEach(btn => btn.disabled = false);
-    }
-  }
 
   function updateCharCount() {
     const count = promptInput.value.length;
@@ -267,15 +194,11 @@ document.addEventListener('DOMContentLoaded', function() {
       submitBtn.disabled = true;
       promptInput.disabled = true;
       
-      // Disable quick action buttons
-      quickActionBtns.forEach(btn => btn.disabled = true);
     } else {
       premiumSection.style.display = 'none';
       submitBtn.disabled = false;
       promptInput.disabled = false;
       
-      // Enable quick action buttons
-      quickActionBtns.forEach(btn => btn.disabled = false);
     }
   }
 
