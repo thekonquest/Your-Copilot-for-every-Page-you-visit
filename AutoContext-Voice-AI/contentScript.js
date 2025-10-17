@@ -196,24 +196,32 @@
 
   // Handle text selection
   function handleTextSelection() {
-    const selection = window.getSelection();
-    const text = selection.toString().trim();
-    
-    console.log('Text selection detected:', text);
-    
-    if (text.length > 0) {
-      console.log('Sending textSelected message to sidebar');
-      // Send text selection to sidebar
-      chrome.runtime.sendMessage({
-        action: 'textSelected',
-        text: text
-      });
-    } else {
-      console.log('Sending textDeselected message to sidebar');
-      // Send text deselection to sidebar
-      chrome.runtime.sendMessage({
-        action: 'textDeselected'
-      });
+    try {
+      const selection = window.getSelection();
+      const text = selection.toString().trim();
+      
+      console.log('Text selection detected:', text);
+      
+      if (text.length > 0) {
+        console.log('Sending textSelected message to sidebar');
+        // Send text selection to sidebar
+        chrome.runtime.sendMessage({
+          action: 'textSelected',
+          text: text
+        }).catch(error => {
+          console.error('Error sending textSelected message:', error);
+        });
+      } else {
+        console.log('Sending textDeselected message to sidebar');
+        // Send text deselection to sidebar
+        chrome.runtime.sendMessage({
+          action: 'textDeselected'
+        }).catch(error => {
+          console.error('Error sending textDeselected message:', error);
+        });
+      }
+    } catch (error) {
+      console.error('Error in handleTextSelection:', error);
     }
   }
 

@@ -507,10 +507,25 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Inject content script to enable text selection detection
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    // Remove any existing content script first
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        // Clear the flag to allow re-injection
+        if (window.copilotContentScriptLoaded) {
+          delete window.copilotContentScriptLoaded;
+        }
+      }
+    });
+    
+    // Inject fresh content script
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       files: ['contentScript.js']
     });
+    
+    console.log('Content script injected successfully');
   } catch (error) {
     console.error('Error injecting content script:', error);
   }
@@ -520,19 +535,42 @@ document.addEventListener('DOMContentLoaded', async function() {
 function setupTextSelectionListener() {
   // Listen for text selection events from content script
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('Sidebar received message:', request);
-    
-    if (request.action === 'textSelected') {
-      console.log('Text selected in sidebar:', request.text);
-      selectedText = request.text;
-      enableCorrectButton();
-      addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
-    } else if (request.action === 'textDeselected') {
-      console.log('Text deselected in sidebar');
-      selectedText = '';
-      disableCorrectButton();
+    try {
+      console.log('Sidebar received message:', request);
+      
+      if (request.action === 'textSelected') {
+        console.log('Text selected in sidebar:', request.text);
+        selectedText = request.text;
+        enableCorrectButton();
+        addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
+      } else if (request.action === 'textDeselected') {
+        console.log('Text deselected in sidebar');
+        selectedText = '';
+        disableCorrectButton();
+      }
+    } catch (error) {
+      console.error('Error handling message in sidebar:', error);
+      // If extension context is invalidated, try to re-inject
+      if (error.message.includes('Extension context invalidated')) {
+        console.log('Extension context invalidated, re-injecting content script...');
+        reInjectContentScript();
+      }
     }
   });
+}
+
+// Re-inject content script when context is invalidated
+async function reInjectContentScript() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['contentScript.js']
+    });
+    console.log('Content script re-injected successfully');
+  } catch (error) {
+    console.error('Error re-injecting content script:', error);
+  }
 }
 
 // Enable the correct button
