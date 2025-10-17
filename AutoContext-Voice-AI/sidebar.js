@@ -343,10 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   async function callAI(prompt, context, userPlan) {
-    // For now, this will be a placeholder until you set up your backend
-    // In the future, this will call your server with the user's plan info
-    
-    const systemPrompt = `You are AutoContext AI, a helpful assistant that understands webpage context. 
+    const systemPrompt = `You are a copilot for every page the user visits, a helpful AI assistant that understands webpage context. 
     
     Current webpage context:
     - URL: ${context.url}
@@ -355,12 +352,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     Help the user with their request while considering the webpage context when relevant.`;
 
-    // TODO: Replace with your actual backend endpoint
-    const response = await fetch('https://your-backend.com/api/chat', {
+    // Use OpenAI API directly with your API key
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userPlan}` // User's plan info
+        'Authorization': 'Bearer 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'
       },
       body: JSON.stringify({
         model: userPlan === 'pro' ? 'gpt-4' : 'gpt-3.5-turbo',
@@ -374,11 +371,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     if (!response.ok) {
-      throw new Error('AI service temporarily unavailable. Please try again later.');
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to get AI response');
     }
 
     const data = await response.json();
-    return data.response || 'AI response received successfully!';
+    return data.choices[0].message.content;
   }
 
   function upgradeToPlan(plan) {
