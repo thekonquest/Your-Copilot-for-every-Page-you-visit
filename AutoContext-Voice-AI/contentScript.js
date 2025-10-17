@@ -232,9 +232,12 @@ function handleFieldClick(event) {
   selectedField = event.target;
   
   console.log('Click-to-fill: Selected field, filling instantly:', selectedField);
+  console.log('Click-to-fill: Content to fill:', fillContent);
   
   // INSTANT FILL - no confirmation needed
   const success = fillSelectedField(fillContent);
+  
+  console.log('Click-to-fill: Fill result:', success);
   
   if (success) {
     // Exit click-to-fill mode immediately
@@ -262,11 +265,17 @@ function fillSelectedField(content) {
     return false;
   }
   
+  console.log('Click-to-fill: Filling field:', selectedField.tagName, selectedField.type, selectedField.contentEditable);
+  console.log('Click-to-fill: Original content:', content);
+  
   try {
     // Extract title and content from AI response
     const titleMatch = content.match(/\*\*Title:\*\*\s*(.+?)(?:\n|$)/i);
     const title = titleMatch ? titleMatch[1].trim() : content.split('\n')[0].trim();
     const cleanContent = content.replace(/\*\*Title:\*\*\s*.+?(?:\n|$)/i, '').trim();
+    
+    console.log('Click-to-fill: Extracted title:', title);
+    console.log('Click-to-fill: Extracted content:', cleanContent.substring(0, 100) + '...');
     
     // Smart content selection based on field type
     let contentToFill = cleanContent;
@@ -274,25 +283,56 @@ function fillSelectedField(content) {
     // If it's a text input (likely title field), use title
     if (selectedField.tagName === 'INPUT' && selectedField.type === 'text') {
       contentToFill = title;
+      console.log('Click-to-fill: Using title for input field');
     }
     // If it's a textarea or contenteditable, use full content
     else if (selectedField.tagName === 'TEXTAREA' || selectedField.contentEditable === 'true') {
       contentToFill = cleanContent;
+      console.log('Click-to-fill: Using full content for textarea/contenteditable');
     }
     
-    // Fill the field
+    console.log('Click-to-fill: Final content to fill:', contentToFill);
+    
+    // Fill the field with multiple methods
+    let filled = false;
+    
+    // Method 1: Direct value setting
     if (selectedField.tagName === 'INPUT' || selectedField.tagName === 'TEXTAREA') {
       selectedField.value = contentToFill;
       selectedField.dispatchEvent(new Event('input', { bubbles: true }));
       selectedField.dispatchEvent(new Event('change', { bubbles: true }));
+      filled = true;
+      console.log('Click-to-fill: Filled via value property');
     } else if (selectedField.contentEditable === 'true' || selectedField.getAttribute('role') === 'textbox') {
       selectedField.textContent = contentToFill;
       selectedField.dispatchEvent(new Event('input', { bubbles: true }));
       selectedField.dispatchEvent(new Event('change', { bubbles: true }));
+      filled = true;
+      console.log('Click-to-fill: Filled via textContent');
     }
     
-    console.log('Click-to-fill: Field filled instantly with:', contentToFill.substring(0, 50) + '...');
-    return true;
+    // Method 2: If that didn't work, try innerHTML
+    if (!filled || (selectedField.value === '' && selectedField.textContent === '')) {
+      console.log('Click-to-fill: Trying innerHTML method');
+      selectedField.innerHTML = contentToFill.replace(/\n/g, '<br>');
+      selectedField.dispatchEvent(new Event('input', { bubbles: true }));
+      selectedField.dispatchEvent(new Event('change', { bubbles: true }));
+      filled = true;
+    }
+    
+    // Method 3: Focus and try again
+    if (!filled || (selectedField.value === '' && selectedField.textContent === '')) {
+      console.log('Click-to-fill: Trying focus method');
+      selectedField.focus();
+      selectedField.textContent = contentToFill;
+      selectedField.dispatchEvent(new Event('input', { bubbles: true }));
+      selectedField.dispatchEvent(new Event('change', { bubbles: true }));
+      filled = true;
+    }
+    
+    console.log('Click-to-fill: Fill successful:', filled);
+    console.log('Click-to-fill: Field value after fill:', selectedField.value || selectedField.textContent);
+    return filled;
   } catch (error) {
     console.error('Click-to-fill: Error filling field:', error);
     return false;
