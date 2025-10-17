@@ -246,12 +246,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add auto-fill buttons for AI messages
     let autoFillButtons = '';
     if (role === 'ai') {
+      const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       autoFillButtons = `
         <div class="auto-fill-buttons">
-          <button class="auto-fill-btn" onclick="fillFormFields('${content.replace(/'/g, "\\'")}')">
+          <button class="auto-fill-btn fill-form-btn" data-message-id="${messageId}">
             📝 Fill Form
           </button>
-          <button class="auto-fill-btn" onclick="fillTitleField('${content.replace(/'/g, "\\'")}')">
+          <button class="auto-fill-btn fill-title-btn" data-message-id="${messageId}">
             📋 Fill Title
           </button>
         </div>
@@ -267,6 +268,24 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     
     messagesContainer.appendChild(messageDiv);
+    
+    // Add event listeners for auto-fill buttons
+    if (role === 'ai') {
+      const fillFormBtn = messageDiv.querySelector('.fill-form-btn');
+      const fillTitleBtn = messageDiv.querySelector('.fill-title-btn');
+      
+      if (fillFormBtn) {
+        fillFormBtn.addEventListener('click', () => {
+          fillFormFields(content);
+        });
+      }
+      
+      if (fillTitleBtn) {
+        fillTitleBtn.addEventListener('click', () => {
+          fillTitleField(content);
+        });
+      }
+    }
     
     if (save && role === 'user') {
       chatHistory.push({
@@ -432,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Auto-fill functions
-  window.fillFormFields = async function(content) {
+  async function fillFormFields(content) {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
@@ -464,9 +483,9 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('Error filling form fields:', error);
       addMessageToChat('❌ Error filling form fields. Make sure you\'re on a webpage with form fields.', 'ai');
     }
-  };
+  }
 
-  window.fillTitleField = async function(content) {
+  async function fillTitleField(content) {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
@@ -502,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('Error filling title field:', error);
       addMessageToChat('❌ Error filling title field. Make sure you\'re on a webpage with a title field.', 'ai');
     }
-  };
+  }
 
   // Global functions for inline event handlers
   window.upgradeToPlan = upgradeToPlan;
