@@ -1,7 +1,16 @@
-// Content script for AutoContext Voice AI
+// Content script for Your Copilot
 // This script runs on every webpage and extracts page data
 
-console.log('AutoContext Voice AI content script loaded');
+console.log('Your Copilot content script loaded');
+
+// Global variables
+let clickToFillMode = false;
+let selectedField = null;
+let fillContent = '';
+let textCorrectionMode = false;
+let selectedText = '';
+let selectedRange = null;
+let correctionButton = null;
 
 // Function to extract page data
 function extractPageData() {
@@ -186,9 +195,6 @@ function debugPageStructure() {
 }
 
 // Click-to-fill system
-let clickToFillMode = false;
-let selectedField = null;
-let fillContent = '';
 
 // Add click listeners to all editable fields
 function addClickListeners() {
@@ -395,10 +401,6 @@ function fillTitleField(title) {
 }
 
 // Text Correction System
-let textCorrectionMode = false;
-let selectedText = '';
-let selectedRange = null;
-let correctionButton = null;
 
 // Start text correction mode
 function startTextCorrection() {
