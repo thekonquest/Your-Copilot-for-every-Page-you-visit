@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
   signOutBtn.addEventListener('click', signOut);
   settingsBtn.addEventListener('click', openSettings);
   submitBtn.addEventListener('click', handleSubmit);
-  document.getElementById('correctTextBtn').addEventListener('click', correctSelectedText);
   
   
   // Character counter
@@ -244,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const time = timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    // Add auto-fill buttons for AI messages
+    // Add auto-fill button for AI messages
     let autoFillButtons = '';
     if (role === 'ai') {
       const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -252,9 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="auto-fill-buttons">
           <button class="auto-fill-btn fill-form-btn" data-message-id="${messageId}">
             📝 Fill Form
-          </button>
-          <button class="auto-fill-btn fill-title-btn" data-message-id="${messageId}">
-            📋 Fill Title
           </button>
         </div>
       `;
@@ -270,20 +266,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     messagesContainer.appendChild(messageDiv);
     
-    // Add event listeners for auto-fill buttons
+    // Add event listener for auto-fill button
     if (role === 'ai') {
       const fillFormBtn = messageDiv.querySelector('.fill-form-btn');
-      const fillTitleBtn = messageDiv.querySelector('.fill-title-btn');
       
       if (fillFormBtn) {
         fillFormBtn.addEventListener('click', () => {
           fillFormFields(content);
-        });
-      }
-      
-      if (fillTitleBtn) {
-        fillTitleBtn.addEventListener('click', () => {
-          fillTitleField(content);
         });
       }
     }
@@ -488,172 +477,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
 
-  async function fillTitleField(content) {
-    // Use the same click-to-fill system for title fields
-    await fillFormFields(content);
-  }
 
 
 
-// Text Correction Feature - New Simplified Flow
-let selectedText = '';
-let correctTextBtn = null;
-
-// Initialize text correction on page load
-document.addEventListener('DOMContentLoaded', async function() {
-  correctTextBtn = document.getElementById('correctTextBtn');
-  setupTextSelectionListener();
-  
-  // Inject content script to enable text selection detection
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    
-    // Remove any existing content script first
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => {
-        // Clear the flag to allow re-injection
-        if (window.copilotContentScriptLoaded) {
-          delete window.copilotContentScriptLoaded;
-        }
-      }
-    });
-    
-    // Inject fresh content script
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ['contentScript.js']
-    });
-    
-    console.log('Content script injected successfully');
-  } catch (error) {
-    console.error('Error injecting content script:', error);
-  }
-});
-
-// Listen for text selection on the current page
-function setupTextSelectionListener() {
-  // Listen for text selection events from content script
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    try {
-      console.log('Sidebar received message:', request);
-      
-      if (request.action === 'textSelected') {
-        console.log('Text selected in sidebar:', request.text);
-        selectedText = request.text;
-        enableCorrectButton();
-        addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
-      } else if (request.action === 'textDeselected') {
-        console.log('Text deselected in sidebar');
-        selectedText = '';
-        disableCorrectButton();
-      }
-    } catch (error) {
-      console.error('Error handling message in sidebar:', error);
-      // If extension context is invalidated, try to re-inject
-      if (error.message.includes('Extension context invalidated')) {
-        console.log('Extension context invalidated, re-injecting content script...');
-        reInjectContentScript();
-      }
-    }
-  });
-}
-
-// Re-inject content script when context is invalidated
-async function reInjectContentScript() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ['contentScript.js']
-    });
-    console.log('Content script re-injected successfully');
-  } catch (error) {
-    console.error('Error re-injecting content script:', error);
-  }
-}
-
-// Enable the correct button
-function enableCorrectButton() {
-  console.log('Enabling correct button');
-  if (correctTextBtn) {
-    correctTextBtn.disabled = false;
-    correctTextBtn.style.background = '#10b981';
-    correctTextBtn.textContent = '✏️ Correct my Text';
-    console.log('Button enabled successfully');
-  } else {
-    console.log('Button not found!');
-  }
-}
-
-// Disable the correct button
-function disableCorrectButton() {
-  console.log('Disabling correct button');
-  if (correctTextBtn) {
-    correctTextBtn.disabled = true;
-    correctTextBtn.style.background = '#9ca3af';
-    correctTextBtn.textContent = '✏️ Correct my Text';
-    console.log('Button disabled successfully');
-  } else {
-    console.log('Button not found!');
-  }
-}
-
-// Correct the selected text
-async function correctSelectedText() {
-  if (!selectedText) {
-    addMessageToChat('❌ Please select some text first!', 'ai');
-    return;
-  }
-
-  try {
-    // Show loading state
-    correctTextBtn.disabled = true;
-    correctTextBtn.textContent = '⏳ Correcting...';
-    correctTextBtn.style.background = '#6b7280';
-
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    // Inject content script
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ['contentScript.js']
-    });
-
-    // Wait for script to load
-    await new Promise(resolve => setTimeout(resolve, 200));
-
-    // Send correction request
-    const response = await chrome.tabs.sendMessage(tab.id, {
-      action: 'correctSelectedText',
-      text: selectedText
-    });
-
-    if (response && response.success) {
-      addMessageToChat(`✅ Corrected: "${response.correctedText}"`, 'ai');
-      addMessageToChat('🎉 Text has been corrected live on the page!', 'ai');
-    } else {
-      addMessageToChat('❌ Failed to correct text. Please try again.', 'ai');
-    }
-
-  } catch (error) {
-    console.error('Error correcting text:', error);
-    addMessageToChat('❌ Error correcting text. Please try again.', 'ai');
-  } finally {
-    // Reset button
-    correctTextBtn.disabled = false;
-    correctTextBtn.textContent = '✏️ Correct my Text';
-    correctTextBtn.style.background = '#10b981';
-    selectedText = '';
-  }
-}
-
-// Listen for text correction messages from content script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'textCorrected') {
-    addMessageToChat(`✅ Text corrected successfully!`, 'ai');
-  }
-});
 
 // Global functions for inline event handlers
 window.upgradeToPlan = upgradeToPlan;

@@ -161,69 +161,17 @@
       return true;
     }
     
-    if (request.action === 'correctSelectedText') {
-      // Handle async operation
-      correctSelectedText(request.text)
-        .then(result => {
-          sendResponse(result);
-        })
-        .catch(error => {
-          console.error('Error correcting selected text:', error);
-          sendResponse({ success: false, error: error.message });
-        });
-      return true; // Indicates we will send a response asynchronously
-    }
   });
 
   // Optional: Send page data when page loads (for debugging)
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       console.log('Page loaded, Your Copilot ready');
-      setupTextSelectionDetection();
     });
   } else {
     console.log('Page already loaded, Your Copilot ready');
-    setupTextSelectionDetection();
   }
 
-  // Setup text selection detection
-  function setupTextSelectionDetection() {
-    // Listen for text selection events
-    document.addEventListener('mouseup', handleTextSelection);
-    document.addEventListener('keyup', handleTextSelection);
-    document.addEventListener('selectionchange', handleTextSelection);
-  }
-
-  // Handle text selection
-  function handleTextSelection() {
-    try {
-      const selection = window.getSelection();
-      const text = selection.toString().trim();
-      
-      console.log('Text selection detected:', text);
-      
-      if (text.length > 0) {
-        console.log('Sending textSelected message to sidebar');
-        // Send text selection to sidebar
-        chrome.runtime.sendMessage({
-          action: 'textSelected',
-          text: text
-        }).catch(error => {
-          console.error('Error sending textSelected message:', error);
-        });
-      } else {
-        console.log('Sending textDeselected message to sidebar');
-        // Send text deselection to sidebar
-        chrome.runtime.sendMessage({
-          action: 'textDeselected'
-        }).catch(error => {
-          console.error('Error sending textDeselected message:', error);
-        });
-      }
-    } catch (error) {
-      console.error('Error in handleTextSelection:', error);
-    }
-  }
 
   // Utility function to get page summary (for future use)
   function getPageSummary() {
@@ -447,187 +395,14 @@
     return { clickToFillMode: true, message: 'Click on any field to fill it with AI content!' };
   }
 
-  // Universal fillTitleField - uses click-to-fill system
-  function fillTitleField(title) {
-    return fillFormFields(title);
-  }
 
-  // Text Correction System - Simplified Flow
-
-  // Correct selected text (called from sidebar)
-  async function correctSelectedText(text) {
-    console.log('Text Correction: Correcting text:', text);
-    
-    try {
-      // Get the current selection
-      const selection = window.getSelection();
-      if (selection.rangeCount === 0) {
-        return { success: false, error: 'No text selected' };
-      }
-      
-      const range = selection.getRangeAt(0);
-      const selectedText = selection.toString().trim();
-      
-      if (selectedText !== text) {
-        return { success: false, error: 'Selected text does not match' };
-      }
-      
-      // Get corrected text from AI
-      const correctedText = await getCorrectedText(text);
-      
-      if (correctedText && correctedText.trim() !== '') {
-        console.log('Text Correction: Got corrected text:', correctedText);
-        
-        // Replace text live on the page
-        replaceTextLive(range, text, correctedText);
-        
-        // Send success message to sidebar
-        chrome.runtime.sendMessage({
-          action: 'textCorrected',
-          originalText: text,
-          correctedText: correctedText
-        });
-        
-        return { success: true, correctedText: correctedText };
-      } else {
-        return { success: false, error: 'Failed to get corrected text' };
-      }
-      
-    } catch (error) {
-      console.error('Text Correction: Error:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Get corrected text from AI
-  async function getCorrectedText(text) {
-    try {
-      const response = await fetch('https://your-copilot-for-every-page-you-visit.onrender.com/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: `Please correct this text for grammar, spelling, and clarity. Return ONLY the corrected text, nothing else: "${text}"`,
-          context: {
-            title: document.title,
-            url: window.location.href,
-            text: text
-          }
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('API request failed');
-      }
-      
-      const data = await response.json();
-      return data.response.trim();
-      
-    } catch (error) {
-      console.error('Text Correction: API Error:', error);
-      return null;
-    }
-  }
-
-  // Replace text live on the page with typewriter effect
-  function replaceTextLive(range, originalText, correctedText) {
-    try {
-      console.log('Text Correction: Starting live replacement');
-      console.log('Original text:', originalText);
-      console.log('Corrected text:', correctedText);
-      
-      // Clone the range to avoid issues
-      const workingRange = range.cloneRange();
-      
-      // Delete the original text
-      workingRange.deleteContents();
-      
-      // Create a container for the typewriter effect
-      const container = document.createElement('span');
-      container.style.cssText = `
-        background: linear-gradient(120deg, #fef3c7 0%, #fde68a 100%);
-        padding: 2px 6px;
-        border-radius: 4px;
-        border: 2px solid #f59e0b;
-        transition: all 0.3s ease;
-      `;
-      
-      // Insert the container
-      workingRange.insertNode(container);
-      
-      // Create a text node inside the container
-      const textNode = document.createTextNode('');
-      container.appendChild(textNode);
-      
-      // Type the corrected text character by character
-      let index = 0;
-      const typeInterval = setInterval(() => {
-        if (index < correctedText.length) {
-          textNode.textContent += correctedText[index];
-          index++;
-        } else {
-          clearInterval(typeInterval);
-          
-          // Add success highlight effect
-          container.style.cssText = `
-            background: linear-gradient(120deg, #a7f3d0 0%, #d1fae5 100%);
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: 2px solid #10b981;
-            transition: all 0.5s ease;
-            animation: successPulse 0.6s ease-out;
-          `;
-          
-          // Add success animation
-          const style = document.createElement('style');
-          style.textContent = `
-            @keyframes successPulse {
-              0% { transform: scale(1); }
-              50% { transform: scale(1.1); }
-              100% { transform: scale(1); }
-            }
-          `;
-          document.head.appendChild(style);
-          
-          // Remove highlight after 3 seconds
-          setTimeout(() => {
-            container.style.background = 'transparent';
-            container.style.border = 'none';
-            container.style.padding = '0';
-            
-            // Convert back to normal text
-            const parent = container.parentNode;
-            if (parent) {
-              parent.replaceChild(textNode, container);
-            }
-          }, 3000);
-          
-          console.log('Text Correction: Live replacement completed');
-        }
-      }, 25); // 25ms delay between characters for smoother effect
-      
-    } catch (error) {
-      console.error('Text Correction: Error replacing text:', error);
-      
-      // Fallback: simple text replacement
-      try {
-        range.deleteContents();
-        range.insertNode(document.createTextNode(correctedText));
-        console.log('Text Correction: Fallback replacement successful');
-      } catch (fallbackError) {
-        console.error('Text Correction: Fallback also failed:', fallbackError);
-      }
-    }
-  }
 
 
   // Make functions available globally for debugging
   window.autoContext = {
     extractPageData,
     getPageSummary,
-    fillFormFields,
-    fillTitleField
+    fillFormFields
   };
 
 })(); // End of IIFE

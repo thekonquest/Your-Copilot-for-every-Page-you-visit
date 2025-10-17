@@ -458,64 +458,6 @@ body {
   }
 }
 
-/* Quick Actions */
-.quick-actions {
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-
-.instruction-text {
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  background: #e0f2fe;
-  border-radius: 6px;
-  border-left: 3px solid #0284c7;
-}
-
-.instruction-text p {
-  margin: 4px 0;
-  font-size: 12px;
-  color: #0369a1;
-  line-height: 1.4;
-}
-
-.instruction-text p:first-child {
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.quick-action-btn {
-  width: 100%;
-  background: #10b981;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.quick-action-btn:hover {
-  background: #059669;
-  transform: translateY(-1px);
-}
-
-.quick-action-btn:active {
-  transform: translateY(0);
-}
-
-.quick-action-btn:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-  transform: none;
-}
 
 /* Auto-fill buttons */
 .auto-fill-buttons {
