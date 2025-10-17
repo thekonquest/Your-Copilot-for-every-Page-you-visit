@@ -482,7 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       
       if (response && response.success) {
-        addMessageToChat('🎯 Click on any field you want to fill with AI content!', 'ai');
+        addMessageToChat('🎯 Click on ANY field you want to fill with AI content!', 'ai');
         
         // Add a "Fill Selected Field" button
         const fillButton = document.createElement('button');
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function() {
           buttonContainer.appendChild(fillButton);
         }
       } else {
-        addMessageToChat('❌ Error starting click-to-fill mode.', 'ai');
+        addMessageToChat('❌ Error starting click-to-fill mode. Make sure you\'re on a webpage.', 'ai');
       }
     } catch (error) {
       console.error('Error starting click-to-fill mode:', error);
