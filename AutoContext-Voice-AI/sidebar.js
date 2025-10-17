@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-            'Authorization': 'Bearer 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'
+            'Authorization': 'Bearer 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'
       },
       body: JSON.stringify({
         model: userPlan === 'pro' ? 'gpt-4' : 'gpt-3.5-turbo',
