@@ -142,6 +142,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true;
   }
+  
+  if (request.action === 'startTextCorrection') {
+    try {
+      const result = startTextCorrection();
+      sendResponse(result);
+    } catch (error) {
+      console.error('Error starting text correction:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true;
+  }
 });
 
 // Optional: Send page data when page loads (for debugging)
@@ -381,6 +392,245 @@ function fillFormFields(content) {
 // Universal fillTitleField - uses click-to-fill system
 function fillTitleField(title) {
   return fillFormFields(title);
+}
+
+// Text Correction System
+let textCorrectionMode = false;
+let selectedText = '';
+let selectedRange = null;
+let correctionButton = null;
+
+// Start text correction mode
+function startTextCorrection() {
+  console.log('Text Correction: Starting mode');
+  
+  textCorrectionMode = true;
+  
+  // Add text selection listener
+  document.addEventListener('mouseup', handleTextSelection);
+  
+  // Show instruction
+  showCorrectionInstruction();
+  
+  return { success: true, message: 'Text correction mode started' };
+}
+
+// Handle text selection
+function handleTextSelection() {
+  if (!textCorrectionMode) return;
+  
+  const selection = window.getSelection();
+  const text = selection.toString().trim();
+  
+  if (text.length > 0) {
+    selectedText = text;
+    selectedRange = selection.getRangeAt(0);
+    
+    // Remove existing correction button
+    if (correctionButton) {
+      correctionButton.remove();
+    }
+    
+    // Show correction button
+    showCorrectionButton(selection);
+  }
+}
+
+// Show correction instruction
+function showCorrectionInstruction() {
+  const instruction = document.createElement('div');
+  instruction.id = 'text-correction-instruction';
+  instruction.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #10b981;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    text-align: center;
+  `;
+  instruction.textContent = '✏️ Highlight any text you want to correct!';
+  document.body.appendChild(instruction);
+  
+  // Auto-remove after 10 seconds
+  setTimeout(() => {
+    if (instruction.parentNode) {
+      instruction.parentNode.removeChild(instruction);
+    }
+  }, 10000);
+}
+
+// Show correction button near selected text
+function showCorrectionButton(selection) {
+  const range = selection.getRangeAt(0);
+  const rect = range.getBoundingClientRect();
+  
+  correctionButton = document.createElement('button');
+  correctionButton.id = 'text-correction-btn';
+  correctionButton.textContent = '✨ Correct';
+  correctionButton.style.cssText = `
+    position: fixed;
+    top: ${rect.top - 40}px;
+    left: ${rect.left + (rect.width / 2) - 40}px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 10001;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+  `;
+  
+  correctionButton.addEventListener('click', handleCorrectionClick);
+  correctionButton.addEventListener('mouseenter', () => {
+    correctionButton.style.background = '#059669';
+    correctionButton.style.transform = 'translateY(-1px)';
+  });
+  correctionButton.addEventListener('mouseleave', () => {
+    correctionButton.style.background = '#10b981';
+    correctionButton.style.transform = 'translateY(0)';
+  });
+  
+  document.body.appendChild(correctionButton);
+}
+
+// Handle correction button click
+async function handleCorrectionClick() {
+  if (!selectedText || !selectedRange) return;
+  
+  console.log('Text Correction: Correcting text:', selectedText);
+  
+  try {
+    // Get corrected text from AI
+    const correctedText = await getCorrectedText(selectedText);
+    
+    if (correctedText) {
+      // Replace text live on the page
+      replaceTextLive(selectedText, correctedText);
+      
+      // Send message to sidebar
+      chrome.runtime.sendMessage({
+        action: 'correctText',
+        text: selectedText,
+        correctedText: correctedText
+      });
+    }
+    
+  } catch (error) {
+    console.error('Text Correction: Error:', error);
+  } finally {
+    // Clean up
+    exitTextCorrectionMode();
+  }
+}
+
+// Get corrected text from AI
+async function getCorrectedText(text) {
+  try {
+    const response = await fetch('https://your-copilot-for-every-page-you-visit.onrender.com/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: `Please correct this text for grammar, spelling, and clarity. Return ONLY the corrected text, nothing else: "${text}"`,
+        context: {
+          title: document.title,
+          url: window.location.href,
+          text: text
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('API request failed');
+    }
+    
+    const data = await response.json();
+    return data.response.trim();
+    
+  } catch (error) {
+    console.error('Text Correction: API Error:', error);
+    return null;
+  }
+}
+
+// Replace text live on the page with typewriter effect
+function replaceTextLive(originalText, correctedText) {
+  try {
+    // Delete the original text
+    selectedRange.deleteContents();
+    
+    // Create a text node for the corrected text
+    const textNode = document.createTextNode('');
+    selectedRange.insertNode(textNode);
+    
+    // Type the corrected text character by character
+    let index = 0;
+    const typeInterval = setInterval(() => {
+      if (index < correctedText.length) {
+        textNode.textContent += correctedText[index];
+        index++;
+      } else {
+        clearInterval(typeInterval);
+        
+        // Add a subtle highlight effect
+        const span = document.createElement('span');
+        span.style.cssText = `
+          background: linear-gradient(120deg, #a7f3d0 0%, #d1fae5 100%);
+          padding: 2px 4px;
+          border-radius: 3px;
+          transition: all 0.3s ease;
+        `;
+        span.textContent = correctedText;
+        
+        // Replace the text node with the highlighted span
+        textNode.parentNode.replaceChild(span, textNode);
+        
+        // Remove highlight after 2 seconds
+        setTimeout(() => {
+          span.style.background = 'transparent';
+          span.style.padding = '0';
+        }, 2000);
+      }
+    }, 30); // 30ms delay between characters
+    
+  } catch (error) {
+    console.error('Text Correction: Error replacing text:', error);
+  }
+}
+
+// Exit text correction mode
+function exitTextCorrectionMode() {
+  textCorrectionMode = false;
+  selectedText = '';
+  selectedRange = null;
+  
+  // Remove correction button
+  if (correctionButton) {
+    correctionButton.remove();
+    correctionButton = null;
+  }
+  
+  // Remove instruction
+  const instruction = document.getElementById('text-correction-instruction');
+  if (instruction) {
+    instruction.remove();
+  }
+  
+  // Remove text selection listener
+  document.removeEventListener('mouseup', handleTextSelection);
 }
 
 // Make functions available globally for debugging

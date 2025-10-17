@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
   signOutBtn.addEventListener('click', signOut);
   settingsBtn.addEventListener('click', openSettings);
   submitBtn.addEventListener('click', handleSubmit);
+  document.getElementById('correctTextBtn').addEventListener('click', startTextCorrection);
   
   
   // Character counter
@@ -494,6 +495,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-  // Global functions for inline event handlers
-  window.upgradeToPlan = upgradeToPlan;
+// Text Correction Feature
+async function startTextCorrection() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    // Inject content script for text correction
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['contentScript.js']
+    });
+
+    // Wait for script to load
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Start text correction mode
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      action: 'startTextCorrection'
+    });
+
+    if (response && response.success) {
+      addMessageToChat('🎯 Highlight any text you want to correct, then click "Correct" when ready!', 'ai');
+    } else {
+      addMessageToChat('❌ Could not start text correction mode. Make sure you\'re on a webpage.', 'ai');
+    }
+
+  } catch (error) {
+    console.error('Error starting text correction:', error);
+    addMessageToChat('❌ Error starting text correction mode.', 'ai');
+  }
+}
+
+// Listen for text correction messages
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'correctText') {
+    handleTextCorrection(request.text, request.correctedText);
+  }
+});
+
+async function handleTextCorrection(originalText, correctedText) {
+  try {
+    // Show the correction in chat
+    addMessageToChat(`📝 **Original:** ${originalText}`, 'user');
+    addMessageToChat(`✨ **Corrected:** ${correctedText}`, 'ai');
+    
+    // Show success message
+    addMessageToChat('✅ Text has been corrected live on the page!', 'ai');
+    
+  } catch (error) {
+    console.error('Error handling text correction:', error);
+    addMessageToChat('❌ Error processing text correction.', 'ai');
+  }
+}
+
+// Global functions for inline event handlers
+window.upgradeToPlan = upgradeToPlan;
 });
