@@ -131,16 +131,50 @@ function getPageSummary() {
   };
 }
 
+// Smart platform detection
+function detectWritingPlatform() {
+  const url = window.location.href;
+  const hostname = window.location.hostname;
+  
+  // Platform detection based on URL and DOM elements
+  if (hostname.includes('medium.com')) {
+    return 'medium';
+  } else if (hostname.includes('docs.google.com')) {
+    return 'google-docs';
+  } else if (hostname.includes('notion.so') || hostname.includes('notion.site')) {
+    return 'notion';
+  } else if (hostname.includes('wordpress.com') || hostname.includes('wp-admin')) {
+    return 'wordpress';
+  } else if (hostname.includes('ghost.io')) {
+    return 'ghost';
+  } else if (hostname.includes('substack.com')) {
+    return 'substack';
+  } else if (hostname.includes('peakd.com')) {
+    return 'peakd';
+  } else if (hostname.includes('hashnode.com')) {
+    return 'hashnode';
+  } else if (hostname.includes('dev.to')) {
+    return 'devto';
+  } else if (hostname.includes('linkedin.com')) {
+    return 'linkedin';
+  } else if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
+    return 'twitter';
+  } else {
+    return 'unknown';
+  }
+}
+
 // Debug function to inspect page structure
 function debugPageStructure() {
   console.log('=== PAGE STRUCTURE DEBUG ===');
+  console.log('Detected platform:', detectWritingPlatform());
   console.log('All input elements:', document.querySelectorAll('input'));
   console.log('All textarea elements:', document.querySelectorAll('textarea'));
   console.log('All contenteditable divs:', document.querySelectorAll('div[contenteditable="true"]'));
   console.log('All divs with role="textbox":', document.querySelectorAll('div[role="textbox"]'));
   
   // Check for common rich text editor classes
-  const richTextSelectors = ['.ql-editor', '.ProseMirror', '.editor-content', '.rich-text-editor'];
+  const richTextSelectors = ['.ql-editor', '.ProseMirror', '.editor-content', '.rich-text-editor', '.DraftEditor-editorContainer', '.public-DraftEditor-content'];
   richTextSelectors.forEach(selector => {
     const elements = document.querySelectorAll(selector);
     if (elements.length > 0) {
@@ -158,8 +192,9 @@ function fillFormFields(content) {
   // Debug the page structure first
   debugPageStructure();
   
-  // Find common form field selectors - expanded list
+  // Universal writing platform selectors - covers ALL platforms
   const titleSelectors = [
+    // Generic title selectors
     'input[type="text"][placeholder*="title" i]',
     'input[type="text"][placeholder*="Title" i]',
     'input[name*="title" i]',
@@ -170,15 +205,50 @@ function fillFormFields(content) {
     'textarea[name*="title" i]',
     'textarea[id*="title" i]',
     'textarea[class*="title" i]',
-    // PeakD specific selectors
+    
+    // Platform-specific selectors
+    // PeakD
     'input[placeholder*="Write a new post" i]',
     'input[placeholder*="Post title" i]',
     'input[placeholder*="Title" i]',
+    
+    // Medium
+    'h1[contenteditable="true"]',
+    'div[data-testid="post-title"]',
+    'input[placeholder*="Title" i]',
+    'div[aria-label*="title" i]',
+    
+    // Google Docs
+    'div[aria-label*="title" i]',
+    'div[contenteditable="true"][aria-label*="title" i]',
+    'div[contenteditable="true"][data-placeholder*="title" i]',
+    
+    // Notion
+    'div[contenteditable="true"][data-block-id]',
+    'div[contenteditable="true"][placeholder*="title" i]',
+    'div[contenteditable="true"][placeholder*="Title" i]',
+    
+    // WordPress
+    'input[name="post_title"]',
+    'input[id="title"]',
+    'input[class*="title"]',
+    
+    // Ghost
+    'input[placeholder*="Post title" i]',
+    'input[name="post.title"]',
+    
+    // Substack
+    'input[placeholder*="Title" i]',
+    'div[contenteditable="true"][data-placeholder*="title" i]',
+    
+    // Generic fallbacks
     'input[type="text"]:not([value])',
-    'textarea[placeholder*="Write" i]'
+    'textarea[placeholder*="Write" i]',
+    'div[contenteditable="true"]:first-of-type'
   ];
   
   const contentSelectors = [
+    // Generic content selectors
     'textarea[placeholder*="content" i]',
     'textarea[placeholder*="Content" i]',
     'textarea[placeholder*="body" i]',
@@ -193,20 +263,64 @@ function fillFormFields(content) {
     'textarea[id*="description" i]',
     'div[contenteditable="true"]',
     'div[role="textbox"]',
-    // PeakD specific selectors - more comprehensive
+    
+    // Platform-specific content selectors
+    // PeakD
     'textarea[placeholder*="Write" i]',
     'textarea[placeholder*="Tell your story" i]',
     'div[contenteditable="true"][data-placeholder*="Write" i]',
-    // Rich text editor selectors
+    
+    // Medium
+    'div[data-testid="post-content"]',
+    'div[contenteditable="true"][aria-label*="content" i]',
+    'div[contenteditable="true"][aria-label*="body" i]',
+    'div[contenteditable="true"][placeholder*="Tell your story" i]',
+    'div[contenteditable="true"][placeholder*="Write" i]',
+    
+    // Google Docs
+    'div[contenteditable="true"][aria-label*="document" i]',
+    'div[contenteditable="true"][aria-label*="editor" i]',
+    'div[contenteditable="true"][data-placeholder*="content" i]',
+    'div[contenteditable="true"][data-placeholder*="body" i]',
+    
+    // Notion
+    'div[contenteditable="true"][data-block-id]',
+    'div[contenteditable="true"][placeholder*="content" i]',
+    'div[contenteditable="true"][placeholder*="body" i]',
+    'div[contenteditable="true"][placeholder*="Write" i]',
+    
+    // WordPress
+    'textarea[name="content"]',
+    'textarea[id="content"]',
+    'div[contenteditable="true"][id*="content"]',
+    'div[contenteditable="true"][class*="content"]',
+    
+    // Ghost
+    'div[contenteditable="true"][data-placeholder*="content" i]',
+    'div[contenteditable="true"][data-placeholder*="body" i]',
+    
+    // Substack
+    'div[contenteditable="true"][data-placeholder*="content" i]',
+    'div[contenteditable="true"][data-placeholder*="body" i]',
+    
+    // Rich text editor selectors (universal)
     '.ql-editor',
     '.ProseMirror',
     '.editor-content',
     '.rich-text-editor',
+    '.DraftEditor-editorContainer',
+    '.public-DraftEditor-content',
+    '.notion-page-content',
+    '.medium-editor-element',
+    '.wp-editor-area',
+    '.wp-content',
+    
+    // Generic fallbacks
     'div[contenteditable="true"]:not([data-placeholder])',
     'div[contenteditable="true"][aria-label*="content" i]',
     'div[contenteditable="true"][aria-label*="body" i]',
     'div[contenteditable="true"][aria-label*="editor" i]',
-    // Generic contenteditable divs (last resort)
+    'div[contenteditable="true"]:not(:first-of-type)',
     'div[contenteditable="true"]'
   ];
   
@@ -216,6 +330,10 @@ function fillFormFields(content) {
   
   // Remove title from content
   const cleanContent = content.replace(/\*\*Title:\*\*\s*.+?(?:\n|$)/i, '').trim();
+  
+  // Get platform-specific filling strategy
+  const platform = detectWritingPlatform();
+  console.log('Auto-fill: Detected platform:', platform);
   
   console.log('Auto-fill: Extracted title:', title);
   console.log('Auto-fill: Clean content:', cleanContent.substring(0, 100) + '...');
@@ -287,21 +405,42 @@ function fillFormFields(content) {
             continue;
           }
         } else if (contentField.contentEditable === 'true' || contentField.getAttribute('role') === 'textbox') {
-          // For rich text editors, try multiple approaches
+          // Platform-specific filling strategies
           try {
-            // Method 1: Set textContent
+            let filled = false;
+            
+            // Method 1: Set textContent (universal)
             contentField.textContent = cleanContent;
             contentField.dispatchEvent(new Event('input', { bubbles: true }));
             contentField.dispatchEvent(new Event('change', { bubbles: true }));
             
-            // Method 2: If that didn't work, try innerHTML
-            if (!contentField.textContent || contentField.textContent.trim().length < 10) {
+            // Method 2: Platform-specific approaches
+            if (platform === 'medium') {
+              // Medium uses Draft.js, try innerHTML with proper formatting
               contentField.innerHTML = cleanContent.replace(/\n/g, '<br>');
               contentField.dispatchEvent(new Event('input', { bubbles: true }));
               contentField.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (platform === 'google-docs') {
+              // Google Docs needs focus and proper events
+              contentField.focus();
+              contentField.textContent = cleanContent;
+              contentField.dispatchEvent(new Event('input', { bubbles: true }));
+              contentField.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (platform === 'notion') {
+              // Notion uses specific block structure
+              contentField.textContent = cleanContent;
+              contentField.dispatchEvent(new Event('input', { bubbles: true }));
+              contentField.dispatchEvent(new Event('change', { bubbles: true }));
+            } else {
+              // Generic approach for other platforms
+              if (!contentField.textContent || contentField.textContent.trim().length < 10) {
+                contentField.innerHTML = cleanContent.replace(/\n/g, '<br>');
+                contentField.dispatchEvent(new Event('input', { bubbles: true }));
+                contentField.dispatchEvent(new Event('change', { bubbles: true }));
+              }
             }
             
-            // Method 3: Try focusing and typing (for stubborn editors)
+            // Method 3: Focus and retry if still empty
             if (!contentField.textContent || contentField.textContent.trim().length < 10) {
               contentField.focus();
               contentField.textContent = cleanContent;
@@ -310,10 +449,10 @@ function fillFormFields(content) {
             }
             
             contentFilled = true;
-            console.log('Auto-fill: Content field filled successfully (contenteditable)');
+            console.log(`Auto-fill: Content field filled successfully (${platform})`);
             break;
           } catch (error) {
-            console.log('Auto-fill: Error filling contenteditable field:', error);
+            console.log(`Auto-fill: Error filling contenteditable field (${platform}):`, error);
           }
         }
       } else {
