@@ -436,14 +436,30 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
+      // First, ensure content script is injected
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['contentScript.js']
+        });
+      } catch (error) {
+        console.log('Content script already injected or injection failed:', error);
+      }
+      
+      // Wait a moment for the script to load
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Send message to content script to fill form fields
-      await chrome.tabs.sendMessage(tab.id, {
+      const response = await chrome.tabs.sendMessage(tab.id, {
         action: 'fillFormFields',
         content: content
       });
       
-      // Show success message
-      addMessageToChat('✅ Form fields filled successfully!', 'ai');
+      if (response && response.success) {
+        addMessageToChat('✅ Form fields filled successfully!', 'ai');
+      } else {
+        addMessageToChat('❌ No form fields found to fill. Make sure you\'re on a webpage with form fields.', 'ai');
+      }
     } catch (error) {
       console.error('Error filling form fields:', error);
       addMessageToChat('❌ Error filling form fields. Make sure you\'re on a webpage with form fields.', 'ai');
@@ -458,14 +474,30 @@ document.addEventListener('DOMContentLoaded', function() {
       const titleMatch = content.match(/\*\*Title:\*\*\s*(.+?)(?:\n|$)/i);
       const title = titleMatch ? titleMatch[1].trim() : content.split('\n')[0].trim();
       
+      // First, ensure content script is injected
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['contentScript.js']
+        });
+      } catch (error) {
+        console.log('Content script already injected or injection failed:', error);
+      }
+      
+      // Wait a moment for the script to load
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Send message to content script to fill title field
-      await chrome.tabs.sendMessage(tab.id, {
+      const response = await chrome.tabs.sendMessage(tab.id, {
         action: 'fillTitleField',
         title: title
       });
       
-      // Show success message
-      addMessageToChat('✅ Title field filled successfully!', 'ai');
+      if (response && response.success) {
+        addMessageToChat('✅ Title field filled successfully!', 'ai');
+      } else {
+        addMessageToChat('❌ No title field found to fill. Make sure you\'re on a webpage with a title field.', 'ai');
+      }
     } catch (error) {
       console.error('Error filling title field:', error);
       addMessageToChat('❌ Error filling title field. Make sure you\'re on a webpage with a title field.', 'ai');

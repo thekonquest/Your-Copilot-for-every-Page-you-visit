@@ -90,8 +90,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   if (request.action === 'fillFormFields') {
     try {
-      fillFormFields(request.content);
-      sendResponse({ success: true });
+      const result = fillFormFields(request.content);
+      sendResponse({ success: result.titleFilled || result.contentFilled, result });
     } catch (error) {
       console.error('Error filling form fields:', error);
       sendResponse({ success: false, error: error.message });
@@ -133,7 +133,9 @@ function getPageSummary() {
 
 // Auto-fill functions
 function fillFormFields(content) {
-  // Find common form field selectors
+  console.log('Auto-fill: Starting to fill form fields with content:', content.substring(0, 100) + '...');
+  
+  // Find common form field selectors - expanded list
   const titleSelectors = [
     'input[type="text"][placeholder*="title" i]',
     'input[type="text"][placeholder*="Title" i]',
@@ -144,7 +146,13 @@ function fillFormFields(content) {
     'textarea[placeholder*="Title" i]',
     'textarea[name*="title" i]',
     'textarea[id*="title" i]',
-    'textarea[class*="title" i]'
+    'textarea[class*="title" i]',
+    // PeakD specific selectors
+    'input[placeholder*="Write a new post" i]',
+    'input[placeholder*="Post title" i]',
+    'input[placeholder*="Title" i]',
+    'input[type="text"]:not([value])',
+    'textarea[placeholder*="Write" i]'
   ];
   
   const contentSelectors = [
@@ -161,7 +169,11 @@ function fillFormFields(content) {
     'textarea[id*="body" i]',
     'textarea[id*="description" i]',
     'div[contenteditable="true"]',
-    'div[role="textbox"]'
+    'div[role="textbox"]',
+    // PeakD specific selectors
+    'textarea[placeholder*="Write" i]',
+    'textarea[placeholder*="Tell your story" i]',
+    'div[contenteditable="true"][data-placeholder*="Write" i]'
   ];
   
   // Extract title and content from AI response
@@ -171,33 +183,55 @@ function fillFormFields(content) {
   // Remove title from content
   const cleanContent = content.replace(/\*\*Title:\*\*\s*.+?(?:\n|$)/i, '').trim();
   
+  console.log('Auto-fill: Extracted title:', title);
+  console.log('Auto-fill: Clean content:', cleanContent.substring(0, 100) + '...');
+  
+  let titleFilled = false;
+  let contentFilled = false;
+  
   // Fill title field
   for (const selector of titleSelectors) {
     const titleField = document.querySelector(selector);
-    if (titleField && !titleField.value) {
-      titleField.value = title;
-      titleField.dispatchEvent(new Event('input', { bubbles: true }));
-      titleField.dispatchEvent(new Event('change', { bubbles: true }));
-      break;
+    if (titleField) {
+      console.log('Auto-fill: Found title field with selector:', selector);
+      if (!titleField.value) {
+        titleField.value = title;
+        titleField.dispatchEvent(new Event('input', { bubbles: true }));
+        titleField.dispatchEvent(new Event('change', { bubbles: true }));
+        titleFilled = true;
+        console.log('Auto-fill: Title field filled successfully');
+        break;
+      }
     }
   }
   
   // Fill content field
   for (const selector of contentSelectors) {
     const contentField = document.querySelector(selector);
-    if (contentField && !contentField.value && !contentField.textContent) {
-      if (contentField.tagName === 'TEXTAREA' || contentField.tagName === 'INPUT') {
-        contentField.value = cleanContent;
-        contentField.dispatchEvent(new Event('input', { bubbles: true }));
-        contentField.dispatchEvent(new Event('change', { bubbles: true }));
-      } else if (contentField.contentEditable === 'true' || contentField.getAttribute('role') === 'textbox') {
-        contentField.textContent = cleanContent;
-        contentField.dispatchEvent(new Event('input', { bubbles: true }));
-        contentField.dispatchEvent(new Event('change', { bubbles: true }));
+    if (contentField) {
+      console.log('Auto-fill: Found content field with selector:', selector);
+      if (!contentField.value && !contentField.textContent) {
+        if (contentField.tagName === 'TEXTAREA' || contentField.tagName === 'INPUT') {
+          contentField.value = cleanContent;
+          contentField.dispatchEvent(new Event('input', { bubbles: true }));
+          contentField.dispatchEvent(new Event('change', { bubbles: true }));
+          contentFilled = true;
+          console.log('Auto-fill: Content field filled successfully');
+          break;
+        } else if (contentField.contentEditable === 'true' || contentField.getAttribute('role') === 'textbox') {
+          contentField.textContent = cleanContent;
+          contentField.dispatchEvent(new Event('input', { bubbles: true }));
+          contentField.dispatchEvent(new Event('change', { bubbles: true }));
+          contentFilled = true;
+          console.log('Auto-fill: Content field filled successfully');
+          break;
+        }
       }
-      break;
     }
   }
+  
+  console.log('Auto-fill: Title filled:', titleFilled, 'Content filled:', contentFilled);
+  return { titleFilled, contentFilled };
 }
 
 function fillTitleField(title) {
