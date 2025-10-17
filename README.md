@@ -1,16 +1,17 @@
-# 🎤 AutoContext Voice AI
+# 🤖 Your copilot for every page you visit
 
-A powerful Chrome extension that combines voice recognition with AI assistance, providing context-aware help for any webpage you're browsing.
+A powerful Chrome extension that provides AI assistance for any webpage you're browsing. Your intelligent copilot that understands context and helps you with text generation, summaries, and smart assistance.
 
 ## ✨ Features
 
-- **🎤 Voice Input**: Speak your requests instead of typing
-- **🤖 AI Assistant**: Powered by OpenAI GPT-3.5-turbo
+- **🤖 AI Assistant**: Powered by OpenAI GPT-3.5-turbo and GPT-4
 - **🌐 Context Awareness**: Understands the webpage you're browsing
 - **📝 Text Generation & Correction**: AI-powered writing assistance
+- **📄 Auto-Summarize**: Instantly summarize any webpage without copy/paste
 - **🔐 Google Sign-in**: Secure authentication with your Google account
-- **📊 Usage Tracking**: 15 free requests per day
+- **📊 Usage Tracking**: Free tier with daily limits
 - **⚡ Keyboard Shortcut**: Press `Ctrl+M` to open instantly
+- **💬 Sidebar Interface**: Clean, modern sidebar instead of popup
 
 ## 🚀 Quick Start
 
@@ -20,78 +21,77 @@ A powerful Chrome extension that combines voice recognition with AI assistance, 
 2. Open Chrome and go to `chrome://extensions/`
 3. Enable "Developer mode" (toggle in top right)
 4. Click "Load unpacked" and select the extension folder
-5. The AutoContext Voice AI icon will appear in your toolbar
+5. The "Your copilot for every page you visit" icon will appear in your toolbar
 
-### 2. Set Up Your API Key
+### 2. Sign In with Google
 
-1. Click the extension icon and then click "Options" (or right-click → Options)
-2. Get your OpenAI API key from [OpenAI Platform](https://platform.openai.com/api-keys)
-3. Paste your API key in the settings page
-4. Click "Save Settings"
-
-### 3. Sign In with Google
-
-1. Click the extension icon
+1. Click the extension icon to open the sidebar
 2. Click "Sign in with Google"
 3. Complete the Google authentication
-4. You're ready to use AutoContext Voice AI!
+4. You're ready to use your copilot!
 
 ## 🎯 How to Use
 
-### Voice Input
-1. Click the microphone button (🎙️) in the extension popup
-2. Speak your request clearly
-3. Your speech will be converted to text automatically
-
 ### Text Input
-1. Type your question or request in the text area
-2. Click "Send to AI" or press `Ctrl+M`
+1. Click the extension icon to open the sidebar
+2. Type your question or request in the text area
+3. Click "Send to AI" or press `Enter`
 
 ### Example Requests
 - "Summarize this article"
-- "What's the main argument on this page?"
+- "What are the key points from this page?"
+- "Explain this concept in simple terms"
 - "Write a professional email about this topic"
 - "Correct the grammar in this text"
-- "Explain this concept in simple terms"
 
-## 🔧 Configuration
+## 💰 Pricing Plans
 
-### API Keys
-- **OpenAI API Key**: Required for AI functionality
-- **Premium License Key**: Optional (for future premium features)
+### Free Plan
+- 10 requests per day
+- GPT-3.5 Turbo AI
+- Basic contextual understanding
 
-### Usage Limits
-- **Free**: 15 requests per day
-- **Premium**: Unlimited requests (coming soon)
+### Basic Plan - $4.99/month
+- 100 requests per day
+- GPT-3.5 Turbo AI
+- Enhanced contextual understanding
+
+### Pro Plan - $9.99/month
+- Unlimited requests
+- Choice of AI model (GPT-3.5, GPT-4, Claude)
+- Full contextual understanding
+- Premium features
 
 ## 📁 File Structure
 
 ```
 AutoContext-Voice-AI/
 ├── manifest.json          # Extension configuration
-├── popup.html             # Main popup interface
-├── popup.css              # Popup styling
-├── popup.js               # Popup functionality
+├── sidebar.html           # Main sidebar interface
+├── sidebar.css            # Sidebar styling
+├── sidebar.js             # Sidebar functionality
 ├── background.js          # Background service worker
 ├── contentScript.js       # Webpage data extraction
 ├── options.html           # Settings page
 ├── options.js             # Settings functionality
+├── index.html             # Landing page
+├── style.css              # Landing page styling
 └── README.md              # This file
 ```
 
 ## 🔒 Privacy & Security
 
-- **Local Storage**: Your API keys are stored securely in Chrome's sync storage
 - **Google OAuth**: Uses Google's secure authentication system
 - **No Data Collection**: We don't collect or store your personal data
+- **Secure API Calls**: All AI requests are handled securely
 - **Open Source**: All code is transparent and auditable
 
 ## 🛠️ Development
 
 ### Prerequisites
 - Chrome browser
-- OpenAI API key
 - Google Cloud Console project (for OAuth)
+- OpenAI API account (for AI functionality)
 
 ### Setup for Development
 1. Clone the repository
@@ -103,30 +103,24 @@ AutoContext-Voice-AI/
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project
 3. Enable Google+ API
-4. Create OAuth 2.0 credentials
-5. Add your extension's URLs to authorized origins
+4. Create OAuth 2.0 credentials (Chrome extension type)
+5. Add your extension ID to authorized origins
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-**"Please set your OpenAI API key"**
-- Go to Options page and enter your API key
-- Make sure the key starts with `sk-`
-
-**"Voice not supported"**
-- Ensure you're using a modern browser
-- Check microphone permissions
-- Try refreshing the page
-
 **"Daily limit reached"**
 - Wait until tomorrow for the limit to reset
-- Or upgrade to premium (coming soon)
+- Or upgrade to Basic/Pro plan
 
 **"Connection failed"**
 - Check your internet connection
-- Verify your OpenAI API key is correct
-- Ensure you have sufficient OpenAI credits
+- Ensure OpenAI API is properly configured
+
+**"Google Sign-in failed"**
+- Check your OAuth configuration
+- Ensure extension ID is correct in Google Cloud Console
 
 ### Getting Help
 - Check the [Issues](https://github.com/thekonquest/AutoContext-Voice-AI/issues) page
@@ -136,8 +130,8 @@ AutoContext-Voice-AI/
 ## 🔮 Roadmap
 
 ### Version 1.1 (Coming Soon)
-- [ ] Premium subscription with Stripe integration
-- [ ] Advanced AI models (GPT-4)
+- [ ] Stripe payment integration
+- [ ] Advanced AI models (GPT-4, Claude)
 - [ ] Custom prompts and templates
 - [ ] Export functionality
 
@@ -171,12 +165,12 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📞 Support
 
 - **GitHub Issues**: [Report bugs or request features](https://github.com/thekonquest/AutoContext-Voice-AI/issues)
-- **Email**: [Your support email]
-- **Discord**: [Your Discord server]
+- **Email**: support@youraiasistant.com
+- **Website**: [Your landing page](https://thekonquest.github.io/Your-Copilot-for-every-Page-you-visit/)
 
 ---
 
-Made with ❤️ by [Your Name](https://github.com/thekonquest)
+Made with ❤️ by YourAIassistant
 
 **Version**: 1.0  
 **Last Updated**: January 2025

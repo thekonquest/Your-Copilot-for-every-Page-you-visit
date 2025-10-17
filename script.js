@@ -1,4 +1,4 @@
-// AutoContext Voice AI Landing Page Script
+// Your copilot for every page you visit Landing Page Script
 
 document.addEventListener('DOMContentLoaded', function() {
     // Smooth scrolling for navigation links
