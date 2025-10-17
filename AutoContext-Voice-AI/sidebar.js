@@ -243,10 +243,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const time = timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
+    // Add auto-fill buttons for AI messages
+    let autoFillButtons = '';
+    if (role === 'ai') {
+      autoFillButtons = `
+        <div class="auto-fill-buttons">
+          <button class="auto-fill-btn" onclick="fillFormFields('${content.replace(/'/g, "\\'")}')">
+            📝 Fill Form
+          </button>
+          <button class="auto-fill-btn" onclick="fillTitleField('${content.replace(/'/g, "\\'")}')">
+            📋 Fill Title
+          </button>
+        </div>
+      `;
+    }
+    
     messageDiv.innerHTML = `
       <div class="message-content">
         ${formatMessage(content)}
       </div>
+      ${autoFillButtons}
       <div class="message-time">${time}</div>
     `;
     
@@ -414,6 +430,47 @@ document.addEventListener('DOMContentLoaded', function() {
     // This will be implemented with your payment system
     alert(`Upgrade to ${plan} plan coming soon! Contact support@youraiasistant.com`);
   }
+
+  // Auto-fill functions
+  window.fillFormFields = async function(content) {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // Send message to content script to fill form fields
+      await chrome.tabs.sendMessage(tab.id, {
+        action: 'fillFormFields',
+        content: content
+      });
+      
+      // Show success message
+      addMessageToChat('✅ Form fields filled successfully!', 'ai');
+    } catch (error) {
+      console.error('Error filling form fields:', error);
+      addMessageToChat('❌ Error filling form fields. Make sure you\'re on a webpage with form fields.', 'ai');
+    }
+  };
+
+  window.fillTitleField = async function(content) {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // Extract title from content (look for **Title:** pattern)
+      const titleMatch = content.match(/\*\*Title:\*\*\s*(.+?)(?:\n|$)/i);
+      const title = titleMatch ? titleMatch[1].trim() : content.split('\n')[0].trim();
+      
+      // Send message to content script to fill title field
+      await chrome.tabs.sendMessage(tab.id, {
+        action: 'fillTitleField',
+        title: title
+      });
+      
+      // Show success message
+      addMessageToChat('✅ Title field filled successfully!', 'ai');
+    } catch (error) {
+      console.error('Error filling title field:', error);
+      addMessageToChat('❌ Error filling title field. Make sure you\'re on a webpage with a title field.', 'ai');
+    }
+  };
 
   // Global functions for inline event handlers
   window.upgradeToPlan = upgradeToPlan;

@@ -457,3 +457,47 @@ body {
     transform: translateY(0);
   }
 }
+
+/* Auto-fill buttons */
+.auto-fill-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.auto-fill-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.auto-fill-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.auto-fill-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive auto-fill buttons */
+@media (max-width: 400px) {
+  .auto-fill-buttons {
+    flex-direction: column;
+  }
+  
+  .auto-fill-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

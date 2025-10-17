@@ -87,6 +87,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true; // Indicates we will send a response asynchronously
   }
+  
+  if (request.action === 'fillFormFields') {
+    try {
+      fillFormFields(request.content);
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('Error filling form fields:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true;
+  }
+  
+  if (request.action === 'fillTitleField') {
+    try {
+      fillTitleField(request.title);
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('Error filling title field:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true;
+  }
 });
 
 // Optional: Send page data when page loads (for debugging)
@@ -109,8 +131,106 @@ function getPageSummary() {
   };
 }
 
+// Auto-fill functions
+function fillFormFields(content) {
+  // Find common form field selectors
+  const titleSelectors = [
+    'input[type="text"][placeholder*="title" i]',
+    'input[type="text"][placeholder*="Title" i]',
+    'input[name*="title" i]',
+    'input[id*="title" i]',
+    'input[class*="title" i]',
+    'textarea[placeholder*="title" i]',
+    'textarea[placeholder*="Title" i]',
+    'textarea[name*="title" i]',
+    'textarea[id*="title" i]',
+    'textarea[class*="title" i]'
+  ];
+  
+  const contentSelectors = [
+    'textarea[placeholder*="content" i]',
+    'textarea[placeholder*="Content" i]',
+    'textarea[placeholder*="body" i]',
+    'textarea[placeholder*="Body" i]',
+    'textarea[placeholder*="description" i]',
+    'textarea[placeholder*="Description" i]',
+    'textarea[name*="content" i]',
+    'textarea[name*="body" i]',
+    'textarea[name*="description" i]',
+    'textarea[id*="content" i]',
+    'textarea[id*="body" i]',
+    'textarea[id*="description" i]',
+    'div[contenteditable="true"]',
+    'div[role="textbox"]'
+  ];
+  
+  // Extract title and content from AI response
+  const titleMatch = content.match(/\*\*Title:\*\*\s*(.+?)(?:\n|$)/i);
+  const title = titleMatch ? titleMatch[1].trim() : content.split('\n')[0].trim();
+  
+  // Remove title from content
+  const cleanContent = content.replace(/\*\*Title:\*\*\s*.+?(?:\n|$)/i, '').trim();
+  
+  // Fill title field
+  for (const selector of titleSelectors) {
+    const titleField = document.querySelector(selector);
+    if (titleField && !titleField.value) {
+      titleField.value = title;
+      titleField.dispatchEvent(new Event('input', { bubbles: true }));
+      titleField.dispatchEvent(new Event('change', { bubbles: true }));
+      break;
+    }
+  }
+  
+  // Fill content field
+  for (const selector of contentSelectors) {
+    const contentField = document.querySelector(selector);
+    if (contentField && !contentField.value && !contentField.textContent) {
+      if (contentField.tagName === 'TEXTAREA' || contentField.tagName === 'INPUT') {
+        contentField.value = cleanContent;
+        contentField.dispatchEvent(new Event('input', { bubbles: true }));
+        contentField.dispatchEvent(new Event('change', { bubbles: true }));
+      } else if (contentField.contentEditable === 'true' || contentField.getAttribute('role') === 'textbox') {
+        contentField.textContent = cleanContent;
+        contentField.dispatchEvent(new Event('input', { bubbles: true }));
+        contentField.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      break;
+    }
+  }
+}
+
+function fillTitleField(title) {
+  // Find title field selectors
+  const titleSelectors = [
+    'input[type="text"][placeholder*="title" i]',
+    'input[type="text"][placeholder*="Title" i]',
+    'input[name*="title" i]',
+    'input[id*="title" i]',
+    'input[class*="title" i]',
+    'textarea[placeholder*="title" i]',
+    'textarea[placeholder*="Title" i]',
+    'textarea[name*="title" i]',
+    'textarea[id*="title" i]',
+    'textarea[class*="title" i]'
+  ];
+  
+  // Fill the first available title field
+  for (const selector of titleSelectors) {
+    const titleField = document.querySelector(selector);
+    if (titleField) {
+      titleField.value = title;
+      titleField.dispatchEvent(new Event('input', { bubbles: true }));
+      titleField.dispatchEvent(new Event('change', { bubbles: true }));
+      break;
+    }
+  }
+}
+
 // Make functions available globally for debugging
 window.autoContext = {
   extractPageData,
-  getPageSummary
+  getPageSummary,
+  fillFormFields,
+  fillTitleField
 };
