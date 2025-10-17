@@ -380,31 +380,34 @@ document.addEventListener('DOMContentLoaded', function() {
     
     Help the user with their request while considering the webpage context when relevant.`;
 
-    // Use OpenAI API directly with your API key
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Use our secure backend API instead of calling OpenAI directly
+    const backendUrl = 'https://your-copilot-for-every-page-you-visit.onrender.com';
+    
+    const response = await fetch(`${backendUrl}/api/chat`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-            'Authorization': 'Bearer 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'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: userPlan === 'pro' ? 'gpt-4' : 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7
+        message: prompt,
+        context: context,
+        userId: user?.email || 'anonymous',
+        userPlan: userPlan
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to get AI response');
+      
+      if (response.status === 429) {
+        throw new Error(`Daily limit reached. You've used ${errorData.currentUsage}/${errorData.limit} requests.`);
+      }
+      
+      throw new Error(errorData.error || 'Failed to get AI response');
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    return data.response;
   }
 
   function upgradeToPlan(plan) {
