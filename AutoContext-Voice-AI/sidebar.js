@@ -523,6 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+
   // Global functions for inline event handlers
   window.upgradeToPlan = upgradeToPlan;
 });

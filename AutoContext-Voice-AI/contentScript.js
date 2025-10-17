@@ -228,13 +228,28 @@ function fillFormFields(content) {
     const titleField = document.querySelector(selector);
     if (titleField) {
       console.log('Auto-fill: Found title field with selector:', selector);
+      
+      // Skip restricted input types
+      if (titleField.tagName === 'INPUT') {
+        const restrictedTypes = ['file', 'password', 'hidden', 'checkbox', 'radio', 'submit', 'button', 'reset'];
+        if (restrictedTypes.includes(titleField.type)) {
+          console.log(`Auto-fill: Skipping restricted title field type: ${titleField.type}`);
+          continue;
+        }
+      }
+      
       if (!titleField.value) {
-        titleField.value = title;
-        titleField.dispatchEvent(new Event('input', { bubbles: true }));
-        titleField.dispatchEvent(new Event('change', { bubbles: true }));
-        titleFilled = true;
-        console.log('Auto-fill: Title field filled successfully');
-        break;
+        try {
+          titleField.value = title;
+          titleField.dispatchEvent(new Event('input', { bubbles: true }));
+          titleField.dispatchEvent(new Event('change', { bubbles: true }));
+          titleFilled = true;
+          console.log('Auto-fill: Title field filled successfully');
+          break;
+        } catch (error) {
+          console.log(`Auto-fill: Error filling title field:`, error.message);
+          continue;
+        }
       }
     }
   }
@@ -250,13 +265,27 @@ function fillFormFields(content) {
                      (!contentField.textContent || contentField.textContent.trim().length < 10);
       
       if (isEmpty) {
+        // Skip restricted input types
+        if (contentField.tagName === 'INPUT') {
+          const restrictedTypes = ['file', 'password', 'hidden', 'checkbox', 'radio', 'submit', 'button', 'reset'];
+          if (restrictedTypes.includes(contentField.type)) {
+            console.log(`Auto-fill: Skipping restricted content field type: ${contentField.type}`);
+            continue;
+          }
+        }
+        
         if (contentField.tagName === 'TEXTAREA' || contentField.tagName === 'INPUT') {
-          contentField.value = cleanContent;
-          contentField.dispatchEvent(new Event('input', { bubbles: true }));
-          contentField.dispatchEvent(new Event('change', { bubbles: true }));
-          contentFilled = true;
-          console.log('Auto-fill: Content field filled successfully (textarea/input)');
-          break;
+          try {
+            contentField.value = cleanContent;
+            contentField.dispatchEvent(new Event('input', { bubbles: true }));
+            contentField.dispatchEvent(new Event('change', { bubbles: true }));
+            contentFilled = true;
+            console.log('Auto-fill: Content field filled successfully (textarea/input)');
+            break;
+          } catch (error) {
+            console.log(`Auto-fill: Error filling content field:`, error.message);
+            continue;
+          }
         } else if (contentField.contentEditable === 'true' || contentField.getAttribute('role') === 'textbox') {
           // For rich text editors, try multiple approaches
           try {
@@ -305,24 +334,43 @@ function fillFormFields(content) {
       const field = allInputs[i];
       console.log(`Auto-fill: Checking field ${i}:`, field.tagName, field.type, field.placeholder, field.className);
       
+      // Skip restricted input types
+      if (field.tagName === 'INPUT') {
+        const restrictedTypes = ['file', 'password', 'hidden', 'checkbox', 'radio', 'submit', 'button', 'reset'];
+        if (restrictedTypes.includes(field.type)) {
+          console.log(`Auto-fill: Skipping restricted input type: ${field.type}`);
+          continue;
+        }
+      }
+      
       // Try to fill any empty field
       if (field.tagName === 'INPUT' || field.tagName === 'TEXTAREA') {
         if (!field.value || field.value.trim().length < 5) {
-          field.value = title; // Try title first
-          field.dispatchEvent(new Event('input', { bubbles: true }));
-          field.dispatchEvent(new Event('change', { bubbles: true }));
-          titleFilled = true;
-          console.log('Auto-fill: Filled field with title:', field);
-          break;
+          try {
+            field.value = title; // Try title first
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+            titleFilled = true;
+            console.log('Auto-fill: Filled field with title:', field);
+            break;
+          } catch (error) {
+            console.log(`Auto-fill: Error filling field ${field.type}:`, error.message);
+            continue;
+          }
         }
       } else if (field.contentEditable === 'true') {
         if (!field.textContent || field.textContent.trim().length < 5) {
-          field.textContent = cleanContent;
-          field.dispatchEvent(new Event('input', { bubbles: true }));
-          field.dispatchEvent(new Event('change', { bubbles: true }));
-          contentFilled = true;
-          console.log('Auto-fill: Filled contenteditable field:', field);
-          break;
+          try {
+            field.textContent = cleanContent;
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+            contentFilled = true;
+            console.log('Auto-fill: Filled contenteditable field:', field);
+            break;
+          } catch (error) {
+            console.log(`Auto-fill: Error filling contenteditable field:`, error.message);
+            continue;
+          }
         }
       }
     }
