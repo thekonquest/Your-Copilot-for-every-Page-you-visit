@@ -154,15 +154,17 @@
       return true;
     }
     
-    if (request.action === 'startTextCorrection') {
-      try {
-        const result = startTextCorrection();
-        sendResponse(result);
-      } catch (error) {
-        console.error('Error starting text correction:', error);
-        sendResponse({ success: false, error: error.message });
-      }
-      return true;
+    if (request.action === 'correctSelectedText') {
+      // Handle async operation
+      correctSelectedText(request.text)
+        .then(result => {
+          sendResponse(result);
+        })
+        .catch(error => {
+          console.error('Error correcting selected text:', error);
+          sendResponse({ success: false, error: error.message });
+        });
+      return true; // Indicates we will send a response asynchronously
     }
   });
 
@@ -402,212 +404,50 @@
     return fillFormFields(title);
   }
 
-  // Text Correction System
+  // Text Correction System - Simplified Flow
 
-  // Start text correction mode
-  function startTextCorrection() {
-    console.log('Text Correction: Starting mode');
-    
-    textCorrectionMode = true;
-    
-    // Add text selection listener
-    document.addEventListener('mouseup', handleTextSelection);
-    
-    // Show instruction
-    showCorrectionInstruction();
-    
-    return { success: true, message: 'Text correction mode started' };
-  }
-
-  // Handle text selection
-  function handleTextSelection() {
-    if (!textCorrectionMode) return;
-    
-    const selection = window.getSelection();
-    const text = selection.toString().trim();
-    
-    if (text.length > 0) {
-      selectedText = text;
-      selectedRange = selection.getRangeAt(0);
-      
-      // Remove existing correction button
-      if (correctionButton) {
-        correctionButton.remove();
-      }
-      
-      // Show correction button
-      showCorrectionButton(selection);
-    }
-  }
-
-  // Show correction instruction
-  function showCorrectionInstruction() {
-    const instruction = document.createElement('div');
-    instruction.id = 'text-correction-instruction';
-    instruction.style.cssText = `
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #10b981;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      z-index: 10000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      text-align: center;
-    `;
-    instruction.textContent = '✏️ Highlight any text you want to correct, then click "Confirm & Correct"!';
-    document.body.appendChild(instruction);
-    
-    // Auto-remove after 10 seconds
-    setTimeout(() => {
-      if (instruction.parentNode) {
-        instruction.parentNode.removeChild(instruction);
-      }
-    }, 10000);
-  }
-
-  // Show correction button near selected text
-  function showCorrectionButton(selection) {
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    
-    // Remove existing button
-    if (correctionButton) {
-      correctionButton.remove();
-    }
-    
-    correctionButton = document.createElement('button');
-    correctionButton.id = 'text-correction-btn';
-    correctionButton.textContent = '✅ Confirm & Correct';
-    correctionButton.style.cssText = `
-      position: fixed;
-      top: ${rect.top - 50}px;
-      left: ${rect.left + (rect.width / 2) - 60}px;
-      background: #10b981;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 20px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      z-index: 10001;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      transition: all 0.2s;
-      animation: pulse 2s infinite;
-    `;
-    
-    // Add pulse animation
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    correctionButton.addEventListener('click', handleCorrectionClick);
-    correctionButton.addEventListener('mouseenter', () => {
-      correctionButton.style.background = '#059669';
-      correctionButton.style.transform = 'translateY(-2px) scale(1.05)';
-      correctionButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
-    });
-    correctionButton.addEventListener('mouseleave', () => {
-      correctionButton.style.background = '#10b981';
-      correctionButton.style.transform = 'translateY(0) scale(1)';
-      correctionButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-    });
-    
-    document.body.appendChild(correctionButton);
-    
-    // Auto-remove button after 30 seconds
-    setTimeout(() => {
-      if (correctionButton && correctionButton.parentNode) {
-        correctionButton.remove();
-      }
-    }, 30000);
-  }
-
-  // Handle correction button click
-  async function handleCorrectionClick() {
-    if (!selectedText || !selectedRange) {
-      console.log('Text Correction: No text or range selected');
-      return;
-    }
-    
-    console.log('Text Correction: Correcting text:', selectedText);
-    
-    // Show loading state
-    if (correctionButton) {
-      correctionButton.textContent = '⏳ Correcting...';
-      correctionButton.disabled = true;
-      correctionButton.style.background = '#6b7280';
-    }
+  // Correct selected text (called from sidebar)
+  async function correctSelectedText(text) {
+    console.log('Text Correction: Correcting text:', text);
     
     try {
+      // Get the current selection
+      const selection = window.getSelection();
+      if (selection.rangeCount === 0) {
+        return { success: false, error: 'No text selected' };
+      }
+      
+      const range = selection.getRangeAt(0);
+      const selectedText = selection.toString().trim();
+      
+      if (selectedText !== text) {
+        return { success: false, error: 'Selected text does not match' };
+      }
+      
       // Get corrected text from AI
-      const correctedText = await getCorrectedText(selectedText);
+      const correctedText = await getCorrectedText(text);
       
       if (correctedText && correctedText.trim() !== '') {
         console.log('Text Correction: Got corrected text:', correctedText);
         
         // Replace text live on the page
-        replaceTextLive(selectedText, correctedText);
+        replaceTextLive(range, text, correctedText);
         
-        // Send message to sidebar
+        // Send success message to sidebar
         chrome.runtime.sendMessage({
-          action: 'correctText',
-          text: selectedText,
+          action: 'textCorrected',
+          originalText: text,
           correctedText: correctedText
         });
         
-        // Show success state briefly
-        if (correctionButton) {
-          correctionButton.textContent = '✅ Corrected!';
-          correctionButton.style.background = '#10b981';
-          setTimeout(() => {
-            if (correctionButton) {
-              correctionButton.remove();
-            }
-          }, 2000);
-        }
-        
+        return { success: true, correctedText: correctedText };
       } else {
-        console.log('Text Correction: No corrected text received');
-        if (correctionButton) {
-          correctionButton.textContent = '❌ Failed';
-          correctionButton.style.background = '#ef4444';
-          setTimeout(() => {
-            if (correctionButton) {
-              correctionButton.remove();
-            }
-          }, 2000);
-        }
+        return { success: false, error: 'Failed to get corrected text' };
       }
       
     } catch (error) {
       console.error('Text Correction: Error:', error);
-      if (correctionButton) {
-        correctionButton.textContent = '❌ Error';
-        correctionButton.style.background = '#ef4444';
-        setTimeout(() => {
-          if (correctionButton) {
-            correctionButton.remove();
-          }
-        }, 2000);
-      }
-    } finally {
-      // Clean up after a delay
-      setTimeout(() => {
-        exitTextCorrectionMode();
-      }, 3000);
+      return { success: false, error: error.message };
     }
   }
 
@@ -643,17 +483,17 @@
   }
 
   // Replace text live on the page with typewriter effect
-  function replaceTextLive(originalText, correctedText) {
+  function replaceTextLive(range, originalText, correctedText) {
     try {
       console.log('Text Correction: Starting live replacement');
       console.log('Original text:', originalText);
       console.log('Corrected text:', correctedText);
       
-      // Store the original range
-      const range = selectedRange.cloneRange();
+      // Clone the range to avoid issues
+      const workingRange = range.cloneRange();
       
       // Delete the original text
-      range.deleteContents();
+      workingRange.deleteContents();
       
       // Create a container for the typewriter effect
       const container = document.createElement('span');
@@ -666,7 +506,7 @@
       `;
       
       // Insert the container
-      range.insertNode(container);
+      workingRange.insertNode(container);
       
       // Create a text node inside the container
       const textNode = document.createTextNode('');
@@ -724,8 +564,8 @@
       
       // Fallback: simple text replacement
       try {
-        selectedRange.deleteContents();
-        selectedRange.insertNode(document.createTextNode(correctedText));
+        range.deleteContents();
+        range.insertNode(document.createTextNode(correctedText));
         console.log('Text Correction: Fallback replacement successful');
       } catch (fallbackError) {
         console.error('Text Correction: Fallback also failed:', fallbackError);
@@ -733,27 +573,6 @@
     }
   }
 
-  // Exit text correction mode
-  function exitTextCorrectionMode() {
-    textCorrectionMode = false;
-    selectedText = '';
-    selectedRange = null;
-    
-    // Remove correction button
-    if (correctionButton) {
-      correctionButton.remove();
-      correctionButton = null;
-    }
-    
-    // Remove instruction
-    const instruction = document.getElementById('text-correction-instruction');
-    if (instruction) {
-      instruction.remove();
-    }
-    
-    // Remove text selection listener
-    document.removeEventListener('mouseup', handleTextSelection);
-  }
 
   // Make functions available globally for debugging
   window.autoContext = {

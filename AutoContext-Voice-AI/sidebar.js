@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
   signOutBtn.addEventListener('click', signOut);
   settingsBtn.addEventListener('click', openSettings);
   submitBtn.addEventListener('click', handleSubmit);
-  document.getElementById('correctTextBtn').addEventListener('click', startTextCorrection);
+  document.getElementById('correctTextBtn').addEventListener('click', correctSelectedText);
   
   
   // Character counter
@@ -495,12 +495,72 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-// Text Correction Feature
-async function startTextCorrection() {
+// Text Correction Feature - New Simplified Flow
+let selectedText = '';
+let correctTextBtn = null;
+
+// Initialize text correction on page load
+document.addEventListener('DOMContentLoaded', function() {
+  correctTextBtn = document.getElementById('correctTextBtn');
+  setupTextSelectionListener();
+});
+
+// Listen for text selection on the current page
+function setupTextSelectionListener() {
+  // Listen for text selection events
+  document.addEventListener('mouseup', handleTextSelection);
+  document.addEventListener('keyup', handleTextSelection);
+}
+
+// Handle text selection
+function handleTextSelection() {
+  const selection = window.getSelection();
+  const text = selection.toString().trim();
+  
+  if (text.length > 0) {
+    selectedText = text;
+    enableCorrectButton();
+    addMessageToChat(`📝 Selected: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`, 'user');
+  } else {
+    selectedText = '';
+    disableCorrectButton();
+  }
+}
+
+// Enable the correct button
+function enableCorrectButton() {
+  if (correctTextBtn) {
+    correctTextBtn.disabled = false;
+    correctTextBtn.style.background = '#10b981';
+    correctTextBtn.textContent = '✏️ Correct my Text';
+  }
+}
+
+// Disable the correct button
+function disableCorrectButton() {
+  if (correctTextBtn) {
+    correctTextBtn.disabled = true;
+    correctTextBtn.style.background = '#9ca3af';
+    correctTextBtn.textContent = '✏️ Correct my Text';
+  }
+}
+
+// Correct the selected text
+async function correctSelectedText() {
+  if (!selectedText) {
+    addMessageToChat('❌ Please select some text first!', 'ai');
+    return;
+  }
+
   try {
+    // Show loading state
+    correctTextBtn.disabled = true;
+    correctTextBtn.textContent = '⏳ Correcting...';
+    correctTextBtn.style.background = '#6b7280';
+
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    // Inject content script for text correction
+    // Inject content script
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       files: ['contentScript.js']
@@ -509,44 +569,37 @@ async function startTextCorrection() {
     // Wait for script to load
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Start text correction mode
+    // Send correction request
     const response = await chrome.tabs.sendMessage(tab.id, {
-      action: 'startTextCorrection'
+      action: 'correctSelectedText',
+      text: selectedText
     });
 
     if (response && response.success) {
-      addMessageToChat('🎯 Highlight any text you want to correct, then click "Confirm & Correct" when ready!', 'ai');
+      addMessageToChat(`✅ Corrected: "${response.correctedText}"`, 'ai');
+      addMessageToChat('🎉 Text has been corrected live on the page!', 'ai');
     } else {
-      addMessageToChat('❌ Could not start text correction mode. Make sure you\'re on a webpage.', 'ai');
+      addMessageToChat('❌ Failed to correct text. Please try again.', 'ai');
     }
 
   } catch (error) {
-    console.error('Error starting text correction:', error);
-    addMessageToChat('❌ Error starting text correction mode.', 'ai');
+    console.error('Error correcting text:', error);
+    addMessageToChat('❌ Error correcting text. Please try again.', 'ai');
+  } finally {
+    // Reset button
+    correctTextBtn.disabled = false;
+    correctTextBtn.textContent = '✏️ Correct my Text';
+    correctTextBtn.style.background = '#10b981';
+    selectedText = '';
   }
 }
 
-// Listen for text correction messages
+// Listen for text correction messages from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'correctText') {
-    handleTextCorrection(request.text, request.correctedText);
+  if (request.action === 'textCorrected') {
+    addMessageToChat(`✅ Text corrected successfully!`, 'ai');
   }
 });
-
-async function handleTextCorrection(originalText, correctedText) {
-  try {
-    // Show the correction in chat
-    addMessageToChat(`📝 **Original:** ${originalText}`, 'user');
-    addMessageToChat(`✨ **Corrected:** ${correctedText}`, 'ai');
-    
-    // Show success message
-    addMessageToChat('✅ Text has been corrected live on the page!', 'ai');
-    
-  } catch (error) {
-    console.error('Error handling text correction:', error);
-    addMessageToChat('❌ Error processing text correction.', 'ai');
-  }
-}
 
 // Global functions for inline event handlers
 window.upgradeToPlan = upgradeToPlan;
