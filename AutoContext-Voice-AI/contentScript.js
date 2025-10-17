@@ -170,10 +170,21 @@ function fillFormFields(content) {
     'textarea[id*="description" i]',
     'div[contenteditable="true"]',
     'div[role="textbox"]',
-    // PeakD specific selectors
+    // PeakD specific selectors - more comprehensive
     'textarea[placeholder*="Write" i]',
     'textarea[placeholder*="Tell your story" i]',
-    'div[contenteditable="true"][data-placeholder*="Write" i]'
+    'div[contenteditable="true"][data-placeholder*="Write" i]',
+    // Rich text editor selectors
+    '.ql-editor',
+    '.ProseMirror',
+    '.editor-content',
+    '.rich-text-editor',
+    'div[contenteditable="true"]:not([data-placeholder])',
+    'div[contenteditable="true"][aria-label*="content" i]',
+    'div[contenteditable="true"][aria-label*="body" i]',
+    'div[contenteditable="true"][aria-label*="editor" i]',
+    // Generic contenteditable divs (last resort)
+    'div[contenteditable="true"]'
   ];
   
   // Extract title and content from AI response
@@ -210,22 +221,51 @@ function fillFormFields(content) {
     const contentField = document.querySelector(selector);
     if (contentField) {
       console.log('Auto-fill: Found content field with selector:', selector);
-      if (!contentField.value && !contentField.textContent) {
+      
+      // Check if field is empty or has minimal content
+      const isEmpty = !contentField.value && 
+                     (!contentField.textContent || contentField.textContent.trim().length < 10);
+      
+      if (isEmpty) {
         if (contentField.tagName === 'TEXTAREA' || contentField.tagName === 'INPUT') {
           contentField.value = cleanContent;
           contentField.dispatchEvent(new Event('input', { bubbles: true }));
           contentField.dispatchEvent(new Event('change', { bubbles: true }));
           contentFilled = true;
-          console.log('Auto-fill: Content field filled successfully');
+          console.log('Auto-fill: Content field filled successfully (textarea/input)');
           break;
         } else if (contentField.contentEditable === 'true' || contentField.getAttribute('role') === 'textbox') {
-          contentField.textContent = cleanContent;
-          contentField.dispatchEvent(new Event('input', { bubbles: true }));
-          contentField.dispatchEvent(new Event('change', { bubbles: true }));
-          contentFilled = true;
-          console.log('Auto-fill: Content field filled successfully');
-          break;
+          // For rich text editors, try multiple approaches
+          try {
+            // Method 1: Set textContent
+            contentField.textContent = cleanContent;
+            contentField.dispatchEvent(new Event('input', { bubbles: true }));
+            contentField.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Method 2: If that didn't work, try innerHTML
+            if (!contentField.textContent || contentField.textContent.trim().length < 10) {
+              contentField.innerHTML = cleanContent.replace(/\n/g, '<br>');
+              contentField.dispatchEvent(new Event('input', { bubbles: true }));
+              contentField.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            
+            // Method 3: Try focusing and typing (for stubborn editors)
+            if (!contentField.textContent || contentField.textContent.trim().length < 10) {
+              contentField.focus();
+              contentField.textContent = cleanContent;
+              contentField.dispatchEvent(new Event('input', { bubbles: true }));
+              contentField.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            
+            contentFilled = true;
+            console.log('Auto-fill: Content field filled successfully (contenteditable)');
+            break;
+          } catch (error) {
+            console.log('Auto-fill: Error filling contenteditable field:', error);
+          }
         }
+      } else {
+        console.log('Auto-fill: Content field not empty, skipping:', contentField.textContent?.substring(0, 50) + '...');
       }
     }
   }
