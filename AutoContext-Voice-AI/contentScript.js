@@ -3,6 +3,13 @@
 
 // Wrap everything in an IIFE to prevent variable redeclaration errors
 (() => {
+  // Prevent multiple injections
+  if (window.copilotContentScriptLoaded) {
+    console.log('Your Copilot content script already loaded, skipping...');
+    return;
+  }
+  window.copilotContentScriptLoaded = true;
+  
   console.log('Your Copilot content script loaded');
 
   // Global variables
@@ -192,13 +199,17 @@
     const selection = window.getSelection();
     const text = selection.toString().trim();
     
+    console.log('Text selection detected:', text);
+    
     if (text.length > 0) {
+      console.log('Sending textSelected message to sidebar');
       // Send text selection to sidebar
       chrome.runtime.sendMessage({
         action: 'textSelected',
         text: text
       });
     } else {
+      console.log('Sending textDeselected message to sidebar');
       // Send text deselection to sidebar
       chrome.runtime.sendMessage({
         action: 'textDeselected'

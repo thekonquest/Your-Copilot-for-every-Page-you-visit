@@ -520,11 +520,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 function setupTextSelectionListener() {
   // Listen for text selection events from content script
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('Sidebar received message:', request);
+    
     if (request.action === 'textSelected') {
+      console.log('Text selected in sidebar:', request.text);
       selectedText = request.text;
       enableCorrectButton();
       addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
     } else if (request.action === 'textDeselected') {
+      console.log('Text deselected in sidebar');
       selectedText = '';
       disableCorrectButton();
     }
@@ -533,19 +537,27 @@ function setupTextSelectionListener() {
 
 // Enable the correct button
 function enableCorrectButton() {
+  console.log('Enabling correct button');
   if (correctTextBtn) {
     correctTextBtn.disabled = false;
     correctTextBtn.style.background = '#10b981';
     correctTextBtn.textContent = '✏️ Correct my Text';
+    console.log('Button enabled successfully');
+  } else {
+    console.log('Button not found!');
   }
 }
 
 // Disable the correct button
 function disableCorrectButton() {
+  console.log('Disabling correct button');
   if (correctTextBtn) {
     correctTextBtn.disabled = true;
     correctTextBtn.style.background = '#9ca3af';
     correctTextBtn.textContent = '✏️ Correct my Text';
+    console.log('Button disabled successfully');
+  } else {
+    console.log('Button not found!');
   }
 }
 
