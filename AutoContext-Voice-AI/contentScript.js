@@ -91,9 +91,46 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'fillFormFields') {
     try {
       const result = fillFormFields(request.content);
-      sendResponse({ success: result.titleFilled || result.contentFilled, result });
+      sendResponse({ success: true, result });
     } catch (error) {
-      console.error('Error filling form fields:', error);
+      console.error('Error starting click-to-fill mode:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true;
+  }
+  
+  if (request.action === 'fillSelectedField') {
+    try {
+      const success = fillSelectedField(request.content);
+      sendResponse({ success: success });
+    } catch (error) {
+      console.error('Error filling selected field:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true;
+  }
+  
+  if (request.action === 'exitClickToFillMode') {
+    try {
+      clickToFillMode = false;
+      selectedField = null;
+      removeClickListeners();
+      
+      // Remove instruction
+      const instruction = document.getElementById('copilot-instruction');
+      if (instruction) {
+        instruction.remove();
+      }
+      
+      // Remove field highlights
+      document.querySelectorAll('.copilot-selected').forEach(el => {
+        el.classList.remove('copilot-selected');
+        el.style.backgroundColor = '';
+      });
+      
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('Error exiting click-to-fill mode:', error);
       sendResponse({ success: false, error: error.message });
     }
     return true;
@@ -185,12 +222,150 @@ function debugPageStructure() {
   console.log('=== END DEBUG ===');
 }
 
+// Click-to-fill system
+let clickToFillMode = false;
+let selectedField = null;
+let fillContent = '';
+
+// Add click listeners to all editable fields
+function addClickListeners() {
+  // Remove existing listeners first
+  removeClickListeners();
+  
+  // Find all potential editable fields
+  const editableFields = document.querySelectorAll('input, textarea, div[contenteditable="true"], div[role="textbox"]');
+  
+  editableFields.forEach(field => {
+    // Skip restricted input types
+    if (field.tagName === 'INPUT') {
+      const restrictedTypes = ['file', 'password', 'hidden', 'checkbox', 'radio', 'submit', 'button', 'reset'];
+      if (restrictedTypes.includes(field.type)) {
+        return;
+      }
+    }
+    
+    // Add click listener
+    field.addEventListener('click', handleFieldClick);
+    field.style.cursor = 'pointer';
+    field.style.border = '2px dashed #3b82f6';
+    field.style.borderRadius = '4px';
+  });
+  
+  console.log(`Click-to-fill: Added listeners to ${editableFields.length} fields`);
+}
+
+// Remove click listeners
+function removeClickListeners() {
+  const editableFields = document.querySelectorAll('input, textarea, div[contenteditable="true"], div[role="textbox"]');
+  
+  editableFields.forEach(field => {
+    field.removeEventListener('click', handleFieldClick);
+    field.style.cursor = '';
+    field.style.border = '';
+    field.style.borderRadius = '';
+  });
+}
+
+// Handle field click
+function handleFieldClick(event) {
+  if (!clickToFillMode) return;
+  
+  event.preventDefault();
+  event.stopPropagation();
+  
+  selectedField = event.target;
+  
+  // Remove previous selection
+  document.querySelectorAll('.copilot-selected').forEach(el => {
+    el.classList.remove('copilot-selected');
+    el.style.backgroundColor = '';
+  });
+  
+  // Highlight selected field
+  selectedField.classList.add('copilot-selected');
+  selectedField.style.backgroundColor = '#dbeafe';
+  
+  console.log('Click-to-fill: Selected field:', selectedField);
+  
+  // Send message to sidebar
+  chrome.runtime.sendMessage({
+    action: 'fieldSelected',
+    fieldType: selectedField.tagName,
+    fieldTypeAttr: selectedField.type,
+    fieldId: selectedField.id,
+    fieldClass: selectedField.className,
+    fieldPlaceholder: selectedField.placeholder
+  });
+}
+
+// Fill the selected field
+function fillSelectedField(content) {
+  if (!selectedField) {
+    console.log('Click-to-fill: No field selected');
+    return false;
+  }
+  
+  try {
+    if (selectedField.tagName === 'INPUT' || selectedField.tagName === 'TEXTAREA') {
+      selectedField.value = content;
+      selectedField.dispatchEvent(new Event('input', { bubbles: true }));
+      selectedField.dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (selectedField.contentEditable === 'true' || selectedField.getAttribute('role') === 'textbox') {
+      selectedField.textContent = content;
+      selectedField.dispatchEvent(new Event('input', { bubbles: true }));
+      selectedField.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
+    console.log('Click-to-fill: Field filled successfully');
+    return true;
+  } catch (error) {
+    console.error('Click-to-fill: Error filling field:', error);
+    return false;
+  }
+}
+
 // Auto-fill functions
 function fillFormFields(content) {
-  console.log('Auto-fill: Starting to fill form fields with content:', content.substring(0, 100) + '...');
+  console.log('Auto-fill: Starting click-to-fill mode with content:', content.substring(0, 100) + '...');
   
-  // Debug the page structure first
-  debugPageStructure();
+  // Store content for later use
+  fillContent = content;
+  
+  // Enter click-to-fill mode
+  clickToFillMode = true;
+  addClickListeners();
+  
+  // Show instruction to user
+  const instruction = document.createElement('div');
+  instruction.id = 'copilot-instruction';
+  instruction.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #3b82f6;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    text-align: center;
+  `;
+  instruction.textContent = '🤖 Click on the field you want to fill with AI content!';
+  document.body.appendChild(instruction);
+  
+  // Auto-remove instruction after 10 seconds
+  setTimeout(() => {
+    if (instruction.parentNode) {
+      instruction.parentNode.removeChild(instruction);
+    }
+  }, 10000);
+  
+  return { clickToFillMode: true, message: 'Click on any field to fill it with AI content!' };
+}
   
   // Universal writing platform selectors - covers ALL platforms
   const titleSelectors = [
