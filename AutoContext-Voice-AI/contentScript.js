@@ -131,9 +131,32 @@ function getPageSummary() {
   };
 }
 
+// Debug function to inspect page structure
+function debugPageStructure() {
+  console.log('=== PAGE STRUCTURE DEBUG ===');
+  console.log('All input elements:', document.querySelectorAll('input'));
+  console.log('All textarea elements:', document.querySelectorAll('textarea'));
+  console.log('All contenteditable divs:', document.querySelectorAll('div[contenteditable="true"]'));
+  console.log('All divs with role="textbox":', document.querySelectorAll('div[role="textbox"]'));
+  
+  // Check for common rich text editor classes
+  const richTextSelectors = ['.ql-editor', '.ProseMirror', '.editor-content', '.rich-text-editor'];
+  richTextSelectors.forEach(selector => {
+    const elements = document.querySelectorAll(selector);
+    if (elements.length > 0) {
+      console.log(`Found ${selector}:`, elements);
+    }
+  });
+  
+  console.log('=== END DEBUG ===');
+}
+
 // Auto-fill functions
 function fillFormFields(content) {
   console.log('Auto-fill: Starting to fill form fields with content:', content.substring(0, 100) + '...');
+  
+  // Debug the page structure first
+  debugPageStructure();
   
   // Find common form field selectors - expanded list
   const titleSelectors = [
@@ -270,7 +293,42 @@ function fillFormFields(content) {
     }
   }
   
-  console.log('Auto-fill: Title filled:', titleFilled, 'Content filled:', contentFilled);
+  // If we still haven't found anything, try a more aggressive approach
+  if (!titleFilled && !contentFilled) {
+    console.log('Auto-fill: No fields found with standard selectors, trying aggressive approach...');
+    
+    // Try to find ANY input or textarea
+    const allInputs = document.querySelectorAll('input, textarea, div[contenteditable="true"]');
+    console.log('Auto-fill: Found all potential fields:', allInputs);
+    
+    for (let i = 0; i < allInputs.length; i++) {
+      const field = allInputs[i];
+      console.log(`Auto-fill: Checking field ${i}:`, field.tagName, field.type, field.placeholder, field.className);
+      
+      // Try to fill any empty field
+      if (field.tagName === 'INPUT' || field.tagName === 'TEXTAREA') {
+        if (!field.value || field.value.trim().length < 5) {
+          field.value = title; // Try title first
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          field.dispatchEvent(new Event('change', { bubbles: true }));
+          titleFilled = true;
+          console.log('Auto-fill: Filled field with title:', field);
+          break;
+        }
+      } else if (field.contentEditable === 'true') {
+        if (!field.textContent || field.textContent.trim().length < 5) {
+          field.textContent = cleanContent;
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          field.dispatchEvent(new Event('change', { bubbles: true }));
+          contentFilled = true;
+          console.log('Auto-fill: Filled contenteditable field:', field);
+          break;
+        }
+      }
+    }
+  }
+  
+  console.log('Auto-fill: Final result - Title filled:', titleFilled, 'Content filled:', contentFilled);
   return { titleFilled, contentFilled };
 }
 
