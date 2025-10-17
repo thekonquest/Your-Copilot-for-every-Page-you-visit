@@ -313,7 +313,31 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       // Get webpage context
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      const webpageData = await chrome.tabs.sendMessage(tab.id, { action: 'getPageData' });
+      
+      // First, ensure content script is injected
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['contentScript.js']
+        });
+      } catch (error) {
+        console.log('Content script already injected or injection failed:', error);
+      }
+      
+      // Wait a moment for the script to load
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      let webpageData;
+      try {
+        webpageData = await chrome.tabs.sendMessage(tab.id, { action: 'getPageData' });
+      } catch (error) {
+        console.log('Content script communication failed, using fallback data');
+        webpageData = {
+          url: tab.url,
+          title: tab.title,
+          content: 'Unable to extract page content. The AI will still help with your request.'
+        };
+      }
 
       // Get user plan for API selection
       const planResult = await chrome.storage.sync.get(['userPlan']);
