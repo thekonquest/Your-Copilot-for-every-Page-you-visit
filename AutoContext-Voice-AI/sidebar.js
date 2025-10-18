@@ -580,19 +580,30 @@ async function handleRewrite() {
     if (response) {
       addMessageToChat(`✨ Rewritten: ${response}`, 'ai');
       
-      // Send to content script to replace the text
+      // Try to replace text on the page
       try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab && tab.id) {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs && tabs.length > 0 && tabs[0].id) {
+          const tab = tabs[0];
+          
+          // Inject content script
           await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             files: ['contentScript.js']
           });
           
+          // Wait a moment for script to load
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Send message to replace text
           await chrome.tabs.sendMessage(tab.id, {
             action: 'replaceSelectedText',
             newText: response
           });
+          
+          addMessageToChat('✅ Text replaced on page!', 'ai');
+        } else {
+          addMessageToChat('✅ Text rewritten! Copy it from above.', 'ai');
         }
       } catch (tabError) {
         console.log('Could not replace text on page:', tabError);
