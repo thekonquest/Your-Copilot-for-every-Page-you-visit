@@ -166,39 +166,48 @@
       // Text Selection Detection
       function setupTextSelection() {
         document.addEventListener('mouseup', () => {
-          const selection = window.getSelection();
-          const text = selection.toString().trim();
-          
-          if (text.length > 0) {
-            // Send selected text to sidebar
-            chrome.runtime.sendMessage({
-              action: 'textSelected',
-              text: text
-            }).catch(error => {
-              console.log('Could not send text selection message:', error);
-            });
-          } else {
-            // Send deselection message
-            chrome.runtime.sendMessage({
-              action: 'textDeselected'
-            }).catch(error => {
-              console.log('Could not send text deselection message:', error);
-            });
+          try {
+            const selection = window.getSelection();
+            const text = selection.toString().trim();
+            
+            if (text.length > 0) {
+              // Send selected text to sidebar
+              chrome.runtime.sendMessage({
+                action: 'textSelected',
+                text: text
+              }).catch(error => {
+                console.log('Could not send text selection message:', error);
+              });
+            } else {
+              // Send deselection message
+              chrome.runtime.sendMessage({
+                action: 'textDeselected'
+              }).catch(error => {
+                console.log('Could not send text deselection message:', error);
+              });
+            }
+          } catch (error) {
+            console.log('Error in text selection:', error);
           }
         });
       }
 
       // Replace Selected Text
       function replaceSelectedText(newText) {
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          range.deleteContents();
-          range.insertNode(document.createTextNode(newText));
-          selection.removeAllRanges();
-          return true;
+        try {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
+            range.insertNode(document.createTextNode(newText));
+            selection.removeAllRanges();
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.log('Error replacing selected text:', error);
+          return false;
         }
-        return false;
       }
 
       // Setup text selection on page load

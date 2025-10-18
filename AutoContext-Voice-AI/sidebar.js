@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Smart Writing Features
   document.getElementById('rewriteBtn').addEventListener('click', handleRewrite);
-  document.getElementById('templatesBtn').addEventListener('click', showTemplates);
   
   // Mode buttons
   document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -589,59 +588,6 @@ async function handleRewrite() {
   }
 }
 
-// Writing Templates
-function showTemplates() {
-  const templates = {
-    'Email Templates': {
-      'Follow-up': 'Hi [Name],\n\nI wanted to follow up on our conversation about [topic]. I\'m excited to move forward and would love to discuss next steps.\n\nBest regards,\n[Your name]',
-      'Apology': 'Hi [Name],\n\nI apologize for [issue]. I understand this may have caused inconvenience, and I\'m working to ensure it doesn\'t happen again.\n\nThank you for your understanding.\n[Your name]',
-      'Introduction': 'Hi [Name],\n\nI hope this email finds you well. I\'m [your role] at [company] and I\'d love to connect with you about [purpose].\n\nWould you be available for a brief call this week?\n\nBest,\n[Your name]'
-    },
-    'Social Media': {
-      'LinkedIn Post': 'Excited to share that [achievement/update]! \n\n[Key points about the topic]\n\nWhat are your thoughts on [relevant question]? I\'d love to hear from you in the comments below.\n\n#professional #networking #career',
-      'Twitter Thread': '🧵 Thread: [Topic]\n\n1/ [First key point]\n\n2/ [Second key point]\n\n3/ [Third key point]\n\nWhat do you think? Let me know in the replies! 👇',
-      'Instagram Caption': '✨ [Exciting update/thought]\n\n[Personal story or insight]\n\n[Call to action or question]\n\n#motivation #lifestyle #inspiration'
-    },
-    'Professional': {
-      'Meeting Notes': '📝 Meeting Notes - [Date]\n\nAttendees: [Names]\n\nAgenda:\n• [Topic 1]\n• [Topic 2]\n• [Topic 3]\n\nAction Items:\n• [Task 1] - [Assignee] - [Due date]\n• [Task 2] - [Assignee] - [Due date]\n\nNext Meeting: [Date]',
-      'Project Update': '📊 Project Update: [Project Name]\n\nStatus: [Current status]\n\nCompleted this week:\n• [Achievement 1]\n• [Achievement 2]\n\nUpcoming:\n• [Next milestone]\n• [Next task]\n\nBlockers: [Any issues]',
-      'Status Report': '📈 Weekly Status Report\n\nHighlights:\n• [Key achievement 1]\n• [Key achievement 2]\n\nChallenges:\n• [Challenge 1]\n• [Challenge 2]\n\nNext Week Focus:\n• [Priority 1]\n• [Priority 2]'
-    }
-  };
-
-  let templateHTML = '<div class="templates-modal"><h3>📝 Writing Templates</h3>';
-  
-  Object.entries(templates).forEach(([category, templateList]) => {
-    templateHTML += `<div class="template-category"><h4>${category}</h4>`;
-    Object.entries(templateList).forEach(([name, content]) => {
-      templateHTML += `<button class="template-btn" data-content="${content.replace(/"/g, '&quot;')}">${name}</button>`;
-    });
-    templateHTML += '</div>';
-  });
-  
-  templateHTML += '</div>';
-  
-  // Create modal
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.innerHTML = templateHTML;
-  document.body.appendChild(modal);
-  
-  // Add event listeners
-  modal.querySelectorAll('.template-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const content = btn.dataset.content;
-      promptInput.value = content;
-      updateCharCount();
-      modal.remove();
-    });
-  });
-  
-  // Close modal on click outside
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
-  });
-}
 
 // Global functions for inline event handlers
 window.upgradeToPlan = upgradeToPlan;
