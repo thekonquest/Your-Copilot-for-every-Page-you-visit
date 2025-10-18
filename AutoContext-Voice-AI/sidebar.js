@@ -495,6 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
 let selectedText = '';
 let currentMode = 'professional';
 let currentPlatform = '';
+let textSelectionListenerAdded = false;
 
 // Platform Detection
 async function detectPlatform() {
@@ -524,9 +525,6 @@ async function detectPlatform() {
     console.error('Error detecting platform:', error);
   }
 }
-
-// Text Selection Setup
-let textSelectionListenerAdded = false;
 
 function setupTextSelection() {
   if (textSelectionListenerAdded) return;
