@@ -19,10 +19,22 @@ let textSelectionListenerAdded = false;
 // Platform Detection
 async function detectPlatform() {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const url = tab.url;
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     
+    if (!tabs || tabs.length === 0) {
+      console.log('No active tab found');
+      return;
+    }
+    
+    const tab = tabs[0];
+    if (!tab || !tab.url) {
+      console.log('Tab or URL not available');
+      return;
+    }
+    
+    const url = tab.url;
     let platform = 'General';
+    
     if (url.includes('linkedin.com')) platform = 'LinkedIn';
     else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'Twitter';
     else if (url.includes('gmail.com')) platform = 'Gmail';
@@ -33,15 +45,24 @@ async function detectPlatform() {
     else if (url.includes('slack.com')) platform = 'Slack';
     
     currentPlatform = platform;
-    document.getElementById('platformBadge').textContent = platform;
+    
+    // Only update UI if elements exist
+    const platformBadge = document.getElementById('platformBadge');
+    if (platformBadge) {
+      platformBadge.textContent = platform;
+    }
     
     // Show writing modes for supported platforms
     if (['LinkedIn', 'Twitter', 'Gmail', 'Facebook', 'Instagram', 'Medium', 'Notion', 'Slack'].includes(platform)) {
-      document.getElementById('writingModes').style.display = 'block';
+      const writingModes = document.getElementById('writingModes');
+      if (writingModes) {
+        writingModes.style.display = 'block';
+      }
     }
     
   } catch (error) {
-    console.error('Error detecting platform:', error);
+    console.log('Error detecting platform:', error);
+    // Don't throw error, just log it
   }
 }
 
@@ -571,7 +592,8 @@ async function handleRewrite() {
   }
 
   try {
-    const length = document.getElementById('lengthSelect').value;
+    const lengthSelect = document.getElementById('lengthSelect');
+    const length = lengthSelect ? lengthSelect.value : 'medium';
     const prompt = `Rewrite this text in a ${currentMode} tone, ${length} length: "${selectedText}"`;
     
     addMessageToChat(`✏️ Rewriting in ${currentMode} tone...`, 'ai');
@@ -583,7 +605,7 @@ async function handleRewrite() {
       // Try to replace text on the page
       try {
         const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tabs && tabs.length > 0 && tabs[0].id) {
+        if (tabs && tabs.length > 0 && tabs[0] && tabs[0].id) {
           const tab = tabs[0];
           
           // Inject content script
@@ -593,15 +615,19 @@ async function handleRewrite() {
           });
           
           // Wait a moment for script to load
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200));
           
           // Send message to replace text
-          await chrome.tabs.sendMessage(tab.id, {
+          const result = await chrome.tabs.sendMessage(tab.id, {
             action: 'replaceSelectedText',
             newText: response
           });
           
-          addMessageToChat('✅ Text replaced on page!', 'ai');
+          if (result && result.success) {
+            addMessageToChat('✅ Text replaced on page!', 'ai');
+          } else {
+            addMessageToChat('✅ Text rewritten! Copy it from above.', 'ai');
+          }
         } else {
           addMessageToChat('✅ Text rewritten! Copy it from above.', 'ai');
         }
@@ -611,7 +637,7 @@ async function handleRewrite() {
       }
     }
   } catch (error) {
-    console.error('Error rewriting text:', error);
+    console.log('Error rewriting text:', error);
     addMessageToChat('❌ Error rewriting text. Please try again.', 'ai');
   }
 }
