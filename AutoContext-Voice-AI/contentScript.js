@@ -214,11 +214,19 @@
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
           console.log('Page loaded, Your Copilot ready');
-          setupTextSelection();
+          try {
+            setupTextSelection();
+          } catch (error) {
+            console.log('Error setting up text selection:', error);
+          }
         });
       } else {
         console.log('Page already loaded, Your Copilot ready');
-        setupTextSelection();
+        try {
+          setupTextSelection();
+        } catch (error) {
+          console.log('Error setting up text selection:', error);
+        }
       }
 
 

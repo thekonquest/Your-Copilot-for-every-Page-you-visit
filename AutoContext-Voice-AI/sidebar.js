@@ -526,18 +526,28 @@ async function detectPlatform() {
 }
 
 // Text Selection Setup
+let textSelectionListenerAdded = false;
+
 function setupTextSelection() {
+  if (textSelectionListenerAdded) return;
+  
   // Listen for text selection from content script
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'textSelected') {
-      selectedText = request.text;
-      document.getElementById('rewriteBtn').disabled = false;
-      addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
-    } else if (request.action === 'textDeselected') {
-      selectedText = '';
-      document.getElementById('rewriteBtn').disabled = true;
+    try {
+      if (request.action === 'textSelected') {
+        selectedText = request.text;
+        document.getElementById('rewriteBtn').disabled = false;
+        addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
+      } else if (request.action === 'textDeselected') {
+        selectedText = '';
+        document.getElementById('rewriteBtn').disabled = true;
+      }
+    } catch (error) {
+      console.log('Error handling text selection message:', error);
     }
   });
+  
+  textSelectionListenerAdded = true;
 }
 
 // Mode Selection
@@ -571,16 +581,23 @@ async function handleRewrite() {
       addMessageToChat(`✨ Rewritten: ${response}`, 'ai');
       
       // Send to content script to replace the text
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['contentScript.js']
-      });
-      
-      await chrome.tabs.sendMessage(tab.id, {
-        action: 'replaceSelectedText',
-        newText: response
-      });
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab && tab.id) {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['contentScript.js']
+          });
+          
+          await chrome.tabs.sendMessage(tab.id, {
+            action: 'replaceSelectedText',
+            newText: response
+          });
+        }
+      } catch (tabError) {
+        console.log('Could not replace text on page:', tabError);
+        addMessageToChat('✅ Text rewritten! Copy it from the chat above.', 'ai');
+      }
     }
   } catch (error) {
     console.error('Error rewriting text:', error);
