@@ -75,11 +75,17 @@ function setupTextSelection() {
     try {
       if (request.action === 'textSelected') {
         selectedText = request.text;
-        document.getElementById('rewriteBtn').disabled = false;
+        const rewriteBtn = document.getElementById('rewriteBtn');
+        if (rewriteBtn) {
+          rewriteBtn.disabled = false;
+        }
         addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
       } else if (request.action === 'textDeselected') {
         selectedText = '';
-        document.getElementById('rewriteBtn').disabled = true;
+        const rewriteBtn = document.getElementById('rewriteBtn');
+        if (rewriteBtn) {
+          rewriteBtn.disabled = true;
+        }
       }
     } catch (error) {
       console.log('Error handling text selection message:', error);
@@ -122,6 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Smart Writing Features
   document.getElementById('rewriteBtn').addEventListener('click', handleRewrite);
+  document.getElementById('manualRewriteBtn').addEventListener('click', handleManualRewrite);
   
   // Mode buttons
   document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -635,6 +642,38 @@ async function handleRewrite() {
         console.log('Could not replace text on page:', tabError);
         addMessageToChat('✅ Text rewritten! Copy it from the chat above.', 'ai');
       }
+    }
+  } catch (error) {
+    console.log('Error rewriting text:', error);
+    addMessageToChat('❌ Error rewriting text. Please try again.', 'ai');
+  }
+}
+
+// Manual Rewrite (fallback)
+async function handleManualRewrite() {
+  const inputText = promptInput.value.trim();
+  
+  if (!inputText) {
+    addMessageToChat('❌ Please type some text to rewrite first!', 'ai');
+    return;
+  }
+
+  try {
+    const lengthSelect = document.getElementById('lengthSelect');
+    const length = lengthSelect ? lengthSelect.value : 'medium';
+    const prompt = `Rewrite this text in a ${currentMode} tone, ${length} length: "${inputText}"`;
+    
+    addMessageToChat(`✏️ Rewriting in ${currentMode} tone...`, 'ai');
+    
+    const response = await callAI(prompt);
+    if (response) {
+      addMessageToChat(`✨ Rewritten: ${response}`, 'ai');
+      
+      // Clear the input
+      promptInput.value = '';
+      updateCharCount();
+      
+      addMessageToChat('✅ Text rewritten! Copy it from above.', 'ai');
     }
   } catch (error) {
     console.log('Error rewriting text:', error);
