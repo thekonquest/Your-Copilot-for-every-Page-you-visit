@@ -10,6 +10,64 @@ const DAILY_LIMITS = {
   pro: -1 // unlimited
 };
 
+// Smart Writing Features - Declare variables first
+let selectedText = '';
+let currentMode = 'professional';
+let currentPlatform = '';
+let textSelectionListenerAdded = false;
+
+// Platform Detection
+async function detectPlatform() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const url = tab.url;
+    
+    let platform = 'General';
+    if (url.includes('linkedin.com')) platform = 'LinkedIn';
+    else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'Twitter';
+    else if (url.includes('gmail.com')) platform = 'Gmail';
+    else if (url.includes('facebook.com')) platform = 'Facebook';
+    else if (url.includes('instagram.com')) platform = 'Instagram';
+    else if (url.includes('medium.com')) platform = 'Medium';
+    else if (url.includes('notion.so')) platform = 'Notion';
+    else if (url.includes('slack.com')) platform = 'Slack';
+    
+    currentPlatform = platform;
+    document.getElementById('platformBadge').textContent = platform;
+    
+    // Show writing modes for supported platforms
+    if (['LinkedIn', 'Twitter', 'Gmail', 'Facebook', 'Instagram', 'Medium', 'Notion', 'Slack'].includes(platform)) {
+      document.getElementById('writingModes').style.display = 'block';
+    }
+    
+  } catch (error) {
+    console.error('Error detecting platform:', error);
+  }
+}
+
+// Text Selection Setup
+function setupTextSelection() {
+  if (textSelectionListenerAdded) return;
+  
+  // Listen for text selection from content script
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    try {
+      if (request.action === 'textSelected') {
+        selectedText = request.text;
+        document.getElementById('rewriteBtn').disabled = false;
+        addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
+      } else if (request.action === 'textDeselected') {
+        selectedText = '';
+        document.getElementById('rewriteBtn').disabled = true;
+      }
+    } catch (error) {
+      console.log('Error handling text selection message:', error);
+    }
+  });
+  
+  textSelectionListenerAdded = true;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   // DOM Elements
   const loginScreen = document.getElementById('loginScreen');
@@ -491,62 +549,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-// Smart Writing Features
-let selectedText = '';
-let currentMode = 'professional';
-let currentPlatform = '';
-let textSelectionListenerAdded = false;
-
-// Platform Detection
-async function detectPlatform() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const url = tab.url;
-    
-    let platform = 'General';
-    if (url.includes('linkedin.com')) platform = 'LinkedIn';
-    else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'Twitter';
-    else if (url.includes('gmail.com')) platform = 'Gmail';
-    else if (url.includes('facebook.com')) platform = 'Facebook';
-    else if (url.includes('instagram.com')) platform = 'Instagram';
-    else if (url.includes('medium.com')) platform = 'Medium';
-    else if (url.includes('notion.so')) platform = 'Notion';
-    else if (url.includes('slack.com')) platform = 'Slack';
-    
-    currentPlatform = platform;
-    document.getElementById('platformBadge').textContent = platform;
-    
-    // Show writing modes for supported platforms
-    if (['LinkedIn', 'Twitter', 'Gmail', 'Facebook', 'Instagram', 'Medium', 'Notion', 'Slack'].includes(platform)) {
-      document.getElementById('writingModes').style.display = 'block';
-    }
-    
-  } catch (error) {
-    console.error('Error detecting platform:', error);
-  }
-}
-
-function setupTextSelection() {
-  if (textSelectionListenerAdded) return;
-  
-  // Listen for text selection from content script
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    try {
-      if (request.action === 'textSelected') {
-        selectedText = request.text;
-        document.getElementById('rewriteBtn').disabled = false;
-        addMessageToChat(`📝 Selected: "${request.text.substring(0, 50)}${request.text.length > 50 ? '...' : ''}"`, 'user');
-      } else if (request.action === 'textDeselected') {
-        selectedText = '';
-        document.getElementById('rewriteBtn').disabled = true;
-      }
-    } catch (error) {
-      console.log('Error handling text selection message:', error);
-    }
-  });
-  
-  textSelectionListenerAdded = true;
-}
 
 // Mode Selection
 function selectMode(mode) {
