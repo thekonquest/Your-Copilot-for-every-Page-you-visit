@@ -77,6 +77,38 @@
     </div>
 
 
+        <!-- Smart Writing Modes -->
+        <div class="writing-modes" id="writingModes" style="display: none;">
+          <div class="mode-header">
+            <h3>✍️ Smart Writing</h3>
+            <span class="platform-badge" id="platformBadge">LinkedIn</span>
+          </div>
+          <div class="mode-options">
+            <button class="mode-btn" data-mode="professional">💼 Professional</button>
+            <button class="mode-btn" data-mode="casual">😊 Casual</button>
+            <button class="mode-btn" data-mode="friendly">🤝 Friendly</button>
+            <button class="mode-btn" data-mode="urgent">⚡ Urgent</button>
+          </div>
+          <div class="tone-options">
+            <label>Length:</label>
+            <select id="lengthSelect">
+              <option value="short">Short (1-2 sentences)</option>
+              <option value="medium" selected>Medium (3-5 sentences)</option>
+              <option value="long">Long (5+ sentences)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <button id="rewriteBtn" class="quick-action-btn" disabled>
+            ✏️ Rewrite Selected Text
+          </button>
+          <button id="templatesBtn" class="quick-action-btn">
+            📝 Writing Templates
+          </button>
+        </div>
+
         <!-- Input Section -->
         <div class="input-section">
           <div class="input-container">

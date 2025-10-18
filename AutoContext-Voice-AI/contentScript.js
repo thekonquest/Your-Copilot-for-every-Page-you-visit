@@ -124,53 +124,93 @@
       return true;
     }
     
-    if (request.action === 'exitClickToFillMode') {
-      try {
-        clickToFillMode = false;
-        selectedField = null;
-        removeClickListeners();
-        
-        // Remove instruction
-        const instruction = document.getElementById('copilot-instruction');
-        if (instruction) {
-          instruction.remove();
+        if (request.action === 'exitClickToFillMode') {
+          try {
+            clickToFillMode = false;
+            selectedField = null;
+            removeClickListeners();
+
+            // Remove instruction
+            const instruction = document.getElementById('copilot-instruction');
+            if (instruction) {
+              instruction.remove();
+            }
+
+            // Remove field highlights
+            document.querySelectorAll('.copilot-selected').forEach(el => {
+              el.classList.remove('copilot-selected');
+              el.style.backgroundColor = '';
+            });
+
+            sendResponse({ success: true });
+          } catch (error) {
+            console.error('Error exiting click-to-fill mode:', error);
+            sendResponse({ success: false, error: error.message });
+          }
+          return true;
         }
-        
-        // Remove field highlights
-        document.querySelectorAll('.copilot-selected').forEach(el => {
-          el.classList.remove('copilot-selected');
-          el.style.backgroundColor = '';
-        });
-        
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error('Error exiting click-to-fill mode:', error);
-        sendResponse({ success: false, error: error.message });
-      }
-      return true;
-    }
-    
-    if (request.action === 'fillTitleField') {
-      try {
-        fillTitleField(request.title);
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error('Error filling title field:', error);
-        sendResponse({ success: false, error: error.message });
-      }
-      return true;
-    }
+
+        if (request.action === 'replaceSelectedText') {
+          try {
+            const success = replaceSelectedText(request.newText);
+            sendResponse({ success: success });
+          } catch (error) {
+            console.error('Error replacing selected text:', error);
+            sendResponse({ success: false, error: error.message });
+          }
+          return true;
+        }
     
   });
 
-  // Optional: Send page data when page loads (for debugging)
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('Page loaded, Your Copilot ready');
-    });
-  } else {
-    console.log('Page already loaded, Your Copilot ready');
-  }
+      // Text Selection Detection
+      function setupTextSelection() {
+        document.addEventListener('mouseup', () => {
+          const selection = window.getSelection();
+          const text = selection.toString().trim();
+          
+          if (text.length > 0) {
+            // Send selected text to sidebar
+            chrome.runtime.sendMessage({
+              action: 'textSelected',
+              text: text
+            }).catch(error => {
+              console.log('Could not send text selection message:', error);
+            });
+          } else {
+            // Send deselection message
+            chrome.runtime.sendMessage({
+              action: 'textDeselected'
+            }).catch(error => {
+              console.log('Could not send text deselection message:', error);
+            });
+          }
+        });
+      }
+
+      // Replace Selected Text
+      function replaceSelectedText(newText) {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(document.createTextNode(newText));
+          selection.removeAllRanges();
+          return true;
+        }
+        return false;
+      }
+
+      // Setup text selection on page load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          console.log('Page loaded, Your Copilot ready');
+          setupTextSelection();
+        });
+      } else {
+        console.log('Page already loaded, Your Copilot ready');
+        setupTextSelection();
+      }
 
 
   // Utility function to get page summary (for future use)
